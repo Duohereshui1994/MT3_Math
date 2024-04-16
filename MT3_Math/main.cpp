@@ -60,7 +60,7 @@ Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
 }
 
 static const int kColumnWidth = 60;
-static void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) {
+void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) {
 
 	Novice::ScreenPrintf(x, y, "%.02f", vector.x);
 
@@ -72,7 +72,7 @@ static void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* 
 }
 
 static const int kRowHeight = 20;
-static void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
+void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
 
 	Novice::ScreenPrintf(x, y - kRowHeight, "%s", label);
 
