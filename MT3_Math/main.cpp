@@ -79,8 +79,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		MatrixScreenPrintf(0, kRowHeight, orthographicMatrix, "orthographicMatrix");
-		MatrixScreenPrintf(0, kRowHeight*6, perspectiveFovMatrix, "perspectiveFovMatrix");
-		MatrixScreenPrintf(0, kRowHeight*11, viewportMatrix, "viewportMatrix");
+		MatrixScreenPrintf(0, kRowHeight * 6, perspectiveFovMatrix, "perspectiveFovMatrix");
+		MatrixScreenPrintf(0, kRowHeight * 11, viewportMatrix, "viewportMatrix");
 		///
 		/// ↑描画処理ここまで
 		///
