@@ -1,4 +1,5 @@
 #include <Novice.h>
+#include "3DFunction.h"
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
@@ -11,6 +12,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// キー入力結果を受け取る箱
 	char keys[256] = {0};
 	char preKeys[256] = {0};
+
+
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -32,7 +35,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-
+		
 		///
 		/// ↑描画処理ここまで
 		///
