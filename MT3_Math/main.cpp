@@ -13,7 +13,7 @@ typedef struct
 /// <summary>
 /// 加算
 /// </summary>
-static Vector3 Add(const Vector3& v1, const Vector3& v2)
+Vector3 Add(const Vector3& v1, const Vector3& v2)
 {
 	Vector3 result = { 0,0,0 };
 	result.x = v1.x + v2.x;
@@ -25,7 +25,7 @@ static Vector3 Add(const Vector3& v1, const Vector3& v2)
 /// <summary>
 /// 減算
 /// </summary>
-static Vector3 Subtract(const Vector3& v1, const Vector3& v2)
+Vector3 Subtract(const Vector3& v1, const Vector3& v2)
 {
 	Vector3 result = { 0,0,0 };
 	result.x = v1.x - v2.x;
@@ -37,7 +37,7 @@ static Vector3 Subtract(const Vector3& v1, const Vector3& v2)
 /// <summary>
 /// スカラー倍
 /// </summary>
-static Vector3 Multiply(float Scaler, const Vector3& v)
+Vector3 Multiply(float Scaler, const Vector3& v)
 {
 	Vector3 result = { 0,0,0 };
 	result.x = Scaler * v.x;
@@ -49,7 +49,7 @@ static Vector3 Multiply(float Scaler, const Vector3& v)
 /// <summary>
 /// 内積
 /// </summary>
-static float Dot(const Vector3& v1, const Vector3& v2)
+float Dot(const Vector3& v1, const Vector3& v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
@@ -57,7 +57,7 @@ static float Dot(const Vector3& v1, const Vector3& v2)
 /// <summary>
 /// 長さ
 /// </summary>
-static float Length(const Vector3& v)
+float Length(const Vector3& v)
 {
 	return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
@@ -65,7 +65,7 @@ static float Length(const Vector3& v)
 /// <summary>
 /// 正規化
 /// </summary>
-static Vector3 Normalize(const Vector3& v)
+Vector3 Normalize(const Vector3& v)
 {
 	float length = Length(v);
 	if (length != 0)
@@ -84,7 +84,7 @@ static Vector3 Normalize(const Vector3& v)
 }
 
 static const int kColumnWidth = 60;
-static void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label)
+void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label)
 {
 	Novice::ScreenPrintf(x, y, "%.02f", vector.x);
 	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", vector.y);
