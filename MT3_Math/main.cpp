@@ -10,7 +10,7 @@ typedef struct
 /// <summary>
 /// 加算
 /// </summary>
-static Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2)
+Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2)
 {
 	Matrix4x4 result = {};
 	for (int i = 0; i < 4; i++) {
@@ -24,7 +24,7 @@ static Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2)
 /// <summary>
 /// 減算
 /// </summary>
-static Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2)
+Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2)
 {
 	Matrix4x4 result = {};
 	for (int i = 0; i < 4; i++) {
@@ -38,7 +38,7 @@ static Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2)
 /// <summary>
 /// 乗算
 /// </summary>
-static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
+Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
 {
 	Matrix4x4 result = {};
 
@@ -56,7 +56,7 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
 /// <summary>
 /// 逆行列
 /// </summary>
-static Matrix4x4 Inverse(const Matrix4x4& m)
+Matrix4x4 Inverse(const Matrix4x4& m)
 {
 	Matrix4x4 result = {};
 	float det;
@@ -194,7 +194,7 @@ static Matrix4x4 Inverse(const Matrix4x4& m)
 /// <summary>
 /// 転置行列
 /// </summary>
-static Matrix4x4 Transpose(const Matrix4x4& m)
+Matrix4x4 Transpose(const Matrix4x4& m)
 {
 	Matrix4x4 result = {};
 	for (int i = 0; i < 4; i++)
@@ -210,7 +210,7 @@ static Matrix4x4 Transpose(const Matrix4x4& m)
 /// <summary>
 /// 単位行列の作成
 /// </summary>
-static Matrix4x4 MakeIdentity4x4()
+Matrix4x4 MakeIdentity4x4()
 {
 	Matrix4x4 result = {};
 	for (int i = 0; i < 4; i++)
@@ -225,7 +225,7 @@ static Matrix4x4 MakeIdentity4x4()
 /// </summary>
 static const int kRowHeight = 20;
 static const int kColumnWidth = 60;
-static void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label)
+void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label)
 {
 	Novice::ScreenPrintf(x, y - kRowHeight, "%s", label);
 	for (int row = 0; row < 4; ++row)
