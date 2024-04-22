@@ -29,7 +29,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 rotate{ };
 	Vector3 translate{};
-	Vector3 cameraPosition{ 0.0f,0.5f ,-10.0f };
+	Vector3 cameraPosition{ 0.0f,0.0f ,-10.0f };
 
 	Vector3 kLocalVertices[3]{};
 	kLocalVertices[0] = { 0.0f,1.0f,0.0f };
