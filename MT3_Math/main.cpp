@@ -32,9 +32,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraPosition{ 0.0f,0.5f ,-10.0f };
 
 	Vector3 kLocalVertices[3]{};
-	kLocalVertices[0] = { 0.5f,1.0f,0.0f };
-	kLocalVertices[1] = { 0.0f,0.0f,0.0f };
-	kLocalVertices[2] = { 1.0f,0.0f,0.0f };
+	kLocalVertices[0] = { 0.0f,1.0f,0.0f };
+	kLocalVertices[1] = { -0.5f,0.0f,0.0f };
+	kLocalVertices[2] = { 0.5f,0.0f,0.0f };
 
 
 
@@ -55,27 +55,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		if (rotate.y < 2.0f * float(M_PI)) {
-			rotate.y += 1.0f / 12 * float(M_PI);
+			rotate.y += 1.0f / 30 * float(M_PI);
 		}
 		else {
 			rotate.y = 0;
 		}
 
 		if (keys[DIK_RIGHT]) {
-			kLocalVertices[0].x += 0.1f;
-			kLocalVertices[1].x += 0.1f;
-			kLocalVertices[2].x += 0.1f;
+			translate.x += 0.1f;
+		}
+		if (keys[DIK_LEFT]) {
+			translate.x -= 0.1f;
 		}
 		if (keys[DIK_UP]) {
-			/*kLocalVertices[0].z += 0.1f;
-			kLocalVertices[1].z += 0.1f;
-			kLocalVertices[2].z += 0.1f;*/
 			cameraPosition.z += 0.1f;
 		}
 		if (keys[DIK_DOWN]) {
-			/*kLocalVertices[0].z -= 0.1f;
-			kLocalVertices[1].z -= 0.1f;
-			kLocalVertices[2].z -= 0.1f;*/
 			cameraPosition.z -= 0.1f;
 		}
 
@@ -97,17 +92,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-		//VectorScreenPrintf(0, 0, cross, "Cross");
+		VectorScreenPrintf(0, 0, cross, "Cross");
 		Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), RED, kFillModeSolid);
-#ifdef _DEBUG
-		MatrixScreenPrintf(0, kRowHeight, worldMatrix, "worldMatrix");
-		MatrixScreenPrintf(0, kRowHeight * 6, cameraMatrix, "cameraMatrix");
-		MatrixScreenPrintf(0, kRowHeight * 11, viewMatrix, "viewMatrix");
-		MatrixScreenPrintf(0, kRowHeight * 16, projectionMatrix, "projectionMatrix");
-		MatrixScreenPrintf(kColumnWidth * 8, kRowHeight, worldViewProjectionMatrix, "worldViewProjectionMatrix");
-		MatrixScreenPrintf(kColumnWidth * 8, kRowHeight * 6, viewPortMatrix, "viewPortMatrix");
 
-#endif // _DEBUG
 
 		///
 		/// ↑描画処理ここまで
