@@ -11,15 +11,33 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
-	
-	//从深处到面前按顺序画线
-	for (uint32_t xIndex = 0; xIndex < kSubdivision; ++xIndex) {
-		//使用上面的信息，求出在world坐标里的起点和终点坐标
-		//变换成screen坐标
-		//使用变换后的坐标画线
-		
 
-		//Novice::DrawLine();
+	Vector3 startPos[kSubdivision + 1];
+	Vector3 endPos[kSubdivision + 1];
+	//Vector3 ndcStartPos[kSubdivision + 1];
+	Vector3 startPosScreen[kSubdivision+1];
+	Vector3 endPosScreen[kSubdivision+1];
+	//从深处到面前按顺序画线
+	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
+		//使用上面的信息，求出在world坐标里的起点和终点坐标
+		startPos[xIndex].x = kGridHalfWidth;
+		endPos[xIndex].x = -kGridHalfWidth;
+
+		startPos[xIndex].y = 0.0f;
+		endPos[xIndex].y = 0.0f;
+
+		startPos[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
+		endPos[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
+		//Novice::ScreenPrintf(0, xIndex * 15, "pos[%d] = %f", xIndex, startPos[xIndex].z);
+		//变换成screen坐标
+		Vector3 ndcStartPos = Transform(startPos[xIndex], worldViewProjectionMatrix);
+		Vector3 ndcEndPos = Transform(endPos[xIndex], worldViewProjectionMatrix);
+
+		startPosScreen[xIndex] = Transform(ndcStartPos, viewPortMatrix);
+		endPosScreen[xIndex] = Transform(ndcEndPos, viewPortMatrix);
+		////使用变换后的坐标画线
+		//
+		Novice::DrawLine((int)startPosScreen[xIndex].x, (int)startPosScreen[xIndex].z, (int)endPosScreen[xIndex].x, (int)endPosScreen[xIndex].z,RED);
 
 	}
 }
@@ -36,7 +54,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-	Vector3 rotate{ };
+	Vector3 rotate{};
 	Vector3 translate{};
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraPTranslate{ 0.0f,1.9f ,-6.49f };
@@ -69,10 +87,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-		DrawGrid(projectionMatrix, viewPortMatrix);
+		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 #ifdef _DEBUG
-		MatrixScreenPrintf(-0, kWindowHeight - 600, worldViewProjectionMatrix, "worldViewProjectionMatrix");
-		MatrixScreenPrintf(-0, kWindowHeight * 6 - 600, viewPortMatrix, "viewPortMatrix");
+		MatrixScreenPrintf(0, kWindowHeight - 100, worldViewProjectionMatrix, "worldViewProjectionMatrix");
 
 #endif 
 
