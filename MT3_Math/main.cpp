@@ -12,39 +12,67 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
 
-	Vector3 startPos[kSubdivision + 1];
-	Vector3 endPos[kSubdivision + 1];
-	Vector3 startPosScreen[kSubdivision + 1];
-	Vector3 endPosScreen[kSubdivision + 1];
+	Vector3 startPosHorizontal[kSubdivision + 1];
+	Vector3 endPosHorizontal[kSubdivision + 1];
+	Vector3 startPosScreenHorizontal[kSubdivision + 1];
+	Vector3 endPosScreenHorizontal[kSubdivision + 1];
+
+	Vector3 startPosVertical[kSubdivision + 1];
+	Vector3 endPosVertical[kSubdivision + 1];
+	Vector3 startPosScreenVertical[kSubdivision + 1];
+	Vector3 endPosScreenVertical[kSubdivision + 1];
 	//从深处到面前按顺序画线
 	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
 		//使用上面的信息，求出在world坐标里的起点和终点坐标
-		startPos[xIndex].x = kGridHalfWidth;
-		endPos[xIndex].x = -kGridHalfWidth;
+		startPosHorizontal[xIndex].x = kGridHalfWidth;
+		endPosHorizontal[xIndex].x = -kGridHalfWidth;
 
-		startPos[xIndex].y = 0.0f;
-		endPos[xIndex].y = 0.0f;
+		startPosHorizontal[xIndex].y = 0.0f;
+		endPosHorizontal[xIndex].y = 0.0f;
 
-		startPos[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
-		endPos[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
+		startPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
+		endPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
 		//变换成screen坐标
-		Vector3 ndcStartPos = Transform(startPos[xIndex], worldViewProjectionMatrix);
-		Vector3 ndcEndPos = Transform(endPos[xIndex], worldViewProjectionMatrix);
+		Vector3 ndcStartPosHorizontal = Transform(startPosHorizontal[xIndex], worldViewProjectionMatrix);
+		Vector3 ndcEndPosHorizontal = Transform(endPosHorizontal[xIndex], worldViewProjectionMatrix);
 
-		startPosScreen[xIndex] = Transform(ndcStartPos, viewPortMatrix);
-		endPosScreen[xIndex] = Transform(ndcEndPos, viewPortMatrix);
+		startPosScreenHorizontal[xIndex] = Transform(ndcStartPosHorizontal, viewPortMatrix);
+		endPosScreenHorizontal[xIndex] = Transform(ndcEndPosHorizontal, viewPortMatrix);
 		////使用变换后的坐标画线
 
 		if (xIndex == 5) {
-			Novice::DrawLine((int)startPosScreen[xIndex].x, (int)startPosScreen[xIndex].y, (int)endPosScreen[xIndex].x, (int)endPosScreen[xIndex].y, BLACK);
+			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, BLACK);
 		}
 		else {
-			Novice::DrawLine((int)startPosScreen[xIndex].x, (int)startPosScreen[xIndex].y, (int)endPosScreen[xIndex].x, (int)endPosScreen[xIndex].y, 0xAAAAAAFF);
-
+			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, 0xAAAAAAFF);
 		}
 
 	}
 	//从左到右
+	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
+		startPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
+		endPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
+
+		startPosVertical[zIndex].y = 0.0f;
+		endPosVertical[zIndex].y = 0.0f;
+
+		startPosVertical[zIndex].z = kGridHalfWidth;
+		endPosVertical[zIndex].z = -kGridHalfWidth;
+
+		Vector3 ndcStartPosVertical = Transform(startPosVertical[zIndex], worldViewProjectionMatrix);
+		Vector3 ndcEndPosVertical = Transform(endPosVertical[zIndex], worldViewProjectionMatrix);
+
+		startPosScreenVertical[zIndex] = Transform(ndcStartPosVertical, viewPortMatrix);
+		endPosScreenVertical[zIndex] = Transform(ndcEndPosVertical, viewPortMatrix);
+
+		if (zIndex == 5) {
+			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, BLACK);
+		}
+		else {
+			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, 0xAAAAAAFF);
+		}
+	
+	}
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
