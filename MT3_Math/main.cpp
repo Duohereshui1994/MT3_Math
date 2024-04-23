@@ -5,13 +5,6 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-Vector3 Cross(const Vector3& v1, const Vector3& v2) {
-	Vector3 result = {};
-	result.x = v1.y * v2.z - v1.z * v2.y;
-	result.y = v1.z * v2.x - v1.x * v2.z;
-	result.z = v1.x * v2.y - v1.y * v2.x;
-	return result;
-}
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -23,18 +16,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
-	Vector3 v1{ 1.2f,-3.9f,2.5f };
-	Vector3 v2{ 2.8f,0.4f,-1.3f };
 
-
+	float check = 0;
 	Vector3 rotate{ };
 	Vector3 translate{};
 	Vector3 cameraPosition{ 0.0f,0.0f ,-10.0f };
 
 	Vector3 kLocalVertices[3]{};
 	kLocalVertices[0] = { 0.0f,1.0f,0.0f };
-	kLocalVertices[1] = { -0.5f,0.0f,0.0f };
-	kLocalVertices[2] = { 0.5f,0.0f,0.0f };
+	kLocalVertices[1] = { 1.0f,-1.0f,0.0f };
+	kLocalVertices[2] = { -1.f,-1.0f,0.0f };
 
 
 
@@ -50,12 +41,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
-		Vector3 cross = Cross(v1, v2);
-
-
 
 		if (rotate.y < 2.0f * float(M_PI)) {
-			rotate.y += 1.0f / 30 * float(M_PI);
+			rotate.y += 1.0f / 60 * float(M_PI);
 		}
 		else {
 			rotate.y = 0;
@@ -85,6 +73,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Vector3 ndcVertex = Transform(kLocalVertices[i], worldViewProjectionMatrix);
 			screenVertices[i] = Transform(ndcVertex, viewPortMatrix);
 		}
+
+		Vector3 v1 = Subtract(screenVertices[1], screenVertices[0]);
+		Vector3 v2 = Subtract(screenVertices[2], screenVertices[1]);
+		Vector3 cross = Cross(v1, v2);
+
+		check = Dot(cameraPosition, cross);
 		///
 		/// ↑更新処理ここまで
 		///
@@ -93,7 +87,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		VectorScreenPrintf(0, 0, cross, "Cross");
-		Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), RED, kFillModeSolid);
+		if (check <= 0) {
+			Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), RED, kFillModeSolid);
+		}
+#ifdef _DEBUG
+		VectorScreenPrintf(0, 15, v1, "v1");
+		VectorScreenPrintf(0, 30, v2, "v2");
+		Novice::ScreenPrintf(0, 45, "check = %f", check);
+		VectorScreenPrintf(0, 60, cameraPosition, "cameraPosition");
+
+#endif // _DEBUG
 
 
 		///
