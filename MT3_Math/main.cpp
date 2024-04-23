@@ -11,41 +11,15 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
-	float xStart[kSubdivision];
-	float xEnd[kSubdivision];
-	float zStart[kSubdivision];
-	float zEnd[kSubdivision];
-	Vector3 start[kSubdivision];
-	Vector3 end[kSubdivision];
-	Vector3 startPointViewport[kSubdivision];
-	Vector3 endPointViewport[kSubdivision];
-	Vector3 startPointClip[kSubdivision];
-	Vector3 endPointClip[kSubdivision];
+	
 	//从深处到面前按顺序画线
 	for (uint32_t xIndex = 0; xIndex < kSubdivision; ++xIndex) {
 		//使用上面的信息，求出在world坐标里的起点和终点坐标
 		//变换成screen坐标
 		//使用变换后的坐标画线
-		xStart[xIndex] = -kGridHalfWidth - xIndex * kGridEvery;
-		xEnd[xIndex] = xStart[xIndex];
-		zStart[xIndex] = kGridHalfWidth;
-		zEnd[xIndex] = -kGridHalfWidth;
+		
 
-		// 固定 y 坐标为 0，表示 XZ 平面
-		float yCoord = 0.0f;
-		start[xIndex] = { xStart[xIndex], yCoord, zStart[xIndex] };
-		end[xIndex] = { xEnd[xIndex], yCoord, zEnd[xIndex] };
-
-		// 变换到裁剪空间
-		startPointClip[xIndex] = Transform(start[xIndex], worldViewProjectionMatrix);
-		endPointClip[xIndex] = Transform(end[xIndex], worldViewProjectionMatrix);
-
-
-		// 变换到视口坐标系
-		startPointViewport[xIndex] = Transform(startPointClip[xIndex], viewPortMatrix);
-		endPointViewport[xIndex] = Transform(endPointClip[xIndex], viewPortMatrix);
-
-		Novice::DrawLine((int)startPointViewport[xIndex].x, (int)startPointViewport[xIndex].z, (int)endPointViewport[xIndex].x, (int)endPointViewport[xIndex].z, RED);
+		Novice::DrawLine();
 
 	}
 }
