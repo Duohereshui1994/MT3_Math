@@ -19,7 +19,7 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 		//使用变换后的坐标画线
 		
 
-		Novice::DrawLine();
+		//Novice::DrawLine();
 
 	}
 }
