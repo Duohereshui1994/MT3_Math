@@ -14,7 +14,6 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 
 	Vector3 startPos[kSubdivision + 1];
 	Vector3 endPos[kSubdivision + 1];
-	//Vector3 ndcStartPos[kSubdivision + 1];
 	Vector3 startPosScreen[kSubdivision + 1];
 	Vector3 endPosScreen[kSubdivision + 1];
 	//从深处到面前按顺序画线
@@ -45,6 +44,7 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 		}
 
 	}
+	//从左到右
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
