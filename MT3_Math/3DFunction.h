@@ -1,17 +1,11 @@
 #pragma once
-#include <math.h>
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <assert.h>
+#include <Vector3.h>
+#include <Matrix4x4.h>
 #include "Novice.h"
-typedef struct {
-	float x;
-	float y;
-	float z;
-}Vector3;
 
-typedef struct {
-	float m[4][4];
-}Matrix4x4;
 
 /// <summary>
 /// 加算
