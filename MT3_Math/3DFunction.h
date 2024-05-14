@@ -592,3 +592,60 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 
 	}
 }
+
+/// <summary>
+/// 线
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Line;
+
+/// <summary>
+/// 半直线
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Ray;
+
+/// <summary>
+/// 线分
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Segment;
+
+/// <summary>
+/// V1 在 V2上的正射影
+/// </summary>
+/// <param name="v1"></param>
+/// <param name="v2"></param>
+/// <returns></returns>
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+
+	float dot = Dot(v1, v2);
+	float len = LengthSquared(v2);
+	float t = dot / len;
+	return Multiply(t, v2);
+}
+
+/// <summary>
+/// 点和线的最近距离的点
+/// </summary>
+/// <param name="point">点</param>
+/// <param name="segment">目标线分</param>
+/// <returns>最近的距离的点</returns>
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+
+	Vector3 o = segment.origin;
+	Vector3 p = point;
+	Vector3 a = Subtract(p, o);
+	Vector3 b = segment.diff;
+
+
+	Vector3 cp = Project(a, b);
+
+	return Add(o, cp);
+}
