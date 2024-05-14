@@ -4,124 +4,63 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
+/// <summary>
+/// 线
+/// </summary>
 typedef struct {
-	Vector3 center;
-	float radius;
-}Sphere;
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Line;
 
-void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
-	Matrix4x4 viewPortMatrix = viewportMatrix;
+/// <summary>
+/// 半直线
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Ray;
 
-	const uint32_t kSubdivision = 20;	//分割数
-	const float kLonEvery = 2.0f * float(M_PI) / float(kSubdivision);		//経度一つ分の角度
-	const float kLatEvery = float(M_PI) / float(kSubdivision);		//緯度一つ分の角度
+/// <summary>
+/// 线分
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Segment;
 
-	Vector3 a[kSubdivision + 1];
-	Vector3 b[kSubdivision + 1];
-	Vector3 c[kSubdivision + 1];
-	//緯度の方向に分割
-	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
-		float lat = -float(M_PI) / 2.0f + kLatEvery * float(latIndex);		//現在の緯度
-		//経度の方向に分割
-		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
-			float lon = kLonEvery * float(lonIndex);		//現在の経度
-			//球面上の座標を求める
-			a[latIndex].x = sphere.center.x + sphere.radius * cos(lat) * cos(lon);
-			a[latIndex].y = sphere.center.y + sphere.radius * sin(lat);
-			a[latIndex].z = sphere.center.z + sphere.radius * cos(lat) * sin(lon);
+/// <summary>
+/// V1 在 V2上的正射影
+/// </summary>
+/// <param name="v1"></param>
+/// <param name="v2"></param>
+/// <returns></returns>
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
 
-			b[latIndex].x = sphere.center.x + sphere.radius * cos(lat + kLatEvery) * cos(lon);
-			b[latIndex].y = sphere.center.y + sphere.radius * sin(lat + kLatEvery);
-			b[latIndex].z = sphere.center.z + sphere.radius * cos(lat + kLatEvery) * sin(lon);
-
-			c[latIndex].x = sphere.center.x + sphere.radius * cos(lat) * cos(lon + kLonEvery);
-			c[latIndex].y = sphere.center.y + sphere.radius * sin(lat);
-			c[latIndex].z = sphere.center.z + sphere.radius * cos(lat) * sin(lon + kLonEvery);
-			//画面上の座標を求める
-			Vector3 ndcA = Transform(a[latIndex], worldViewProjectionMatrix);
-			Vector3 ndcB = Transform(b[latIndex], worldViewProjectionMatrix);
-			Vector3 ndcC = Transform(c[latIndex], worldViewProjectionMatrix);
-			Vector3 screenA = Transform(ndcA, viewPortMatrix);
-			Vector3 screenB = Transform(ndcB, viewPortMatrix);
-			Vector3 screenC = Transform(ndcC, viewPortMatrix);
-
-			Novice::DrawLine((int)screenA.x, (int)screenA.y, (int)screenB.x, (int)screenB.y, color);
-			Novice::DrawLine((int)screenA.x, (int)screenA.y, (int)screenC.x, (int)screenC.y, color);
-		}
-	}
+	float dot = Dot(v1, v2);
+	float len = LengthSquared(v2);
+	float t = dot / len;
+	return Multiply(t, v2);
 }
 
-void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) {
-	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
-	const uint32_t kSubdivision = 10;//分割数
-	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);//一つ分の長さ
+/// <summary>
+/// 点和线的最近距离的点
+/// </summary>
+/// <param name="point">点</param>
+/// <param name="segment">目标线分</param>
+/// <returns>最近的距离的点</returns>
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
-	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
-	Matrix4x4 viewPortMatrix = viewportMatrix;
+	Vector3 o = segment.origin;
+	Vector3 p = point;
+	Vector3 a = Subtract(p, o);
+	Vector3 b = segment.diff;
 
-	Vector3 startPosHorizontal[kSubdivision + 1];
-	Vector3 endPosHorizontal[kSubdivision + 1];
-	Vector3 startPosScreenHorizontal[kSubdivision + 1];
-	Vector3 endPosScreenHorizontal[kSubdivision + 1];
 
-	Vector3 startPosVertical[kSubdivision + 1];
-	Vector3 endPosVertical[kSubdivision + 1];
-	Vector3 startPosScreenVertical[kSubdivision + 1];
-	Vector3 endPosScreenVertical[kSubdivision + 1];
-	//从深处到面前按顺序画线
-	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
-		//使用上面的信息，求出在world坐标里的起点和终点坐标
-		startPosHorizontal[xIndex].x = kGridHalfWidth;
-		endPosHorizontal[xIndex].x = -kGridHalfWidth;
+	Vector3 cp = Project(a, b);
 
-		startPosHorizontal[xIndex].y = 0.0f;
-		endPosHorizontal[xIndex].y = 0.0f;
-
-		startPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
-		endPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
-		//变换成screen坐标
-		Vector3 ndcStartPosHorizontal = Transform(startPosHorizontal[xIndex], worldViewProjectionMatrix);
-		Vector3 ndcEndPosHorizontal = Transform(endPosHorizontal[xIndex], worldViewProjectionMatrix);
-
-		startPosScreenHorizontal[xIndex] = Transform(ndcStartPosHorizontal, viewPortMatrix);
-		endPosScreenHorizontal[xIndex] = Transform(ndcEndPosHorizontal, viewPortMatrix);
-		////使用变换后的坐标画线
-
-		if (xIndex == 5) {
-			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, BLACK);
-		}
-		else {
-			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, 0xAAAAAAFF);
-		}
-
-	}
-	//从左到右
-	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
-		startPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
-		endPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
-
-		startPosVertical[zIndex].y = 0.0f;
-		endPosVertical[zIndex].y = 0.0f;
-
-		startPosVertical[zIndex].z = kGridHalfWidth;
-		endPosVertical[zIndex].z = -kGridHalfWidth;
-
-		Vector3 ndcStartPosVertical = Transform(startPosVertical[zIndex], worldViewProjectionMatrix);
-		Vector3 ndcEndPosVertical = Transform(endPosVertical[zIndex], worldViewProjectionMatrix);
-
-		startPosScreenVertical[zIndex] = Transform(ndcStartPosVertical, viewPortMatrix);
-		endPosScreenVertical[zIndex] = Transform(ndcEndPosVertical, viewPortMatrix);
-
-		if (zIndex == 5) {
-			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, BLACK);
-		}
-		else {
-			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, 0xAAAAAAFF);
-		}
-
-	}
+	return Add(o, cp);
 }
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -140,9 +79,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f ,-6.49f };
 
-	Sphere sphere;
-	sphere.center = Vector3{ 0.0f,0.0f,0.0f };
-	sphere.radius = 0.5f;
+	Segment segment{ {-2.0f, -1.0f,0.0f},{3.0f,2.0f,2.0f} };
+	Vector3 point{ -1.5f,0.6f,0.6f };
 
 
 
@@ -166,12 +104,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
+
+
+		Vector3 project = Project(Subtract(point, segment.origin), segment.diff);
+		Vector3 closestPoint = ClosestPoint(point, segment);
+
+		Sphere pointSphere{ point,0.01f };
+		Sphere closestPointSphere{ closestPoint,0.01f };
+
+		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
+
 #ifdef _DEBUG
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
-		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);	
-		ImGui::DragFloat3("SphereCenter", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("SphereRadius", &sphere.radius, 0.01f);
+		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
+		ImGui::InputFloat3("Project", &project.x, "%.3f", ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputFloat3("closestPoint", &closestPoint.x, "%.3f", ImGuiInputTextFlags_ReadOnly);
 		ImGui::End();
 
 #endif 
@@ -183,7 +132,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
-		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, BLACK);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
+		DrawSphere(pointSphere, worldViewProjectionMatrix, viewPortMatrix, RED);
+		DrawSphere(closestPointSphere, worldViewProjectionMatrix, viewPortMatrix, BLACK);
 #ifdef _DEBUG
 
 
