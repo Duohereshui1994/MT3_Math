@@ -13,13 +13,13 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
 
-	const uint32_t kSubdivision = 20;	//分割数
+	const uint32_t kSubdivision = 10;	//分割数
 	const float kLonEvery = 2.0f * float(M_PI) / float(kSubdivision);		//経度一つ分の角度
 	const float kLatEvery = float(M_PI) / float(kSubdivision);		//緯度一つ分の角度
 
-	Vector3 a[kSubdivision + 1];
-	Vector3 b[kSubdivision + 1];
-	Vector3 c[kSubdivision + 1];
+	Vector3 a;
+	Vector3 b;
+	Vector3 c;
 	//緯度の方向に分割
 	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
 		float lat = -float(M_PI) / 2.0f + kLatEvery * float(latIndex);		//現在の緯度
@@ -27,21 +27,21 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
 			float lon = kLonEvery * float(lonIndex);		//現在の経度
 			//球面上の座標を求める
-			a[latIndex].x = sphere.center.x + sphere.radius * cos(lat) * cos(lon);
-			a[latIndex].y = sphere.center.y + sphere.radius * sin(lat);
-			a[latIndex].z = sphere.center.z + sphere.radius * cos(lat) * sin(lon);
+			a.x = sphere.center.x + sphere.radius * cos(lat) * cos(lon);
+			a.y = sphere.center.y + sphere.radius * sin(lat);
+			a.z = sphere.center.z + sphere.radius * cos(lat) * sin(lon);
 
-			b[latIndex].x = sphere.center.x + sphere.radius * cos(lat + kLatEvery) * cos(lon);
-			b[latIndex].y = sphere.center.y + sphere.radius * sin(lat + kLatEvery);
-			b[latIndex].z = sphere.center.z + sphere.radius * cos(lat + kLatEvery) * sin(lon);
+			b.x = sphere.center.x + sphere.radius * cos(lat + kLatEvery) * cos(lon);
+			b.y = sphere.center.y + sphere.radius * sin(lat + kLatEvery);
+			b.z = sphere.center.z + sphere.radius * cos(lat + kLatEvery) * sin(lon);
 
-			c[latIndex].x = sphere.center.x + sphere.radius * cos(lat) * cos(lon + kLonEvery);
-			c[latIndex].y = sphere.center.y + sphere.radius * sin(lat);
-			c[latIndex].z = sphere.center.z + sphere.radius * cos(lat) * sin(lon + kLonEvery);
+			c.x = sphere.center.x + sphere.radius * cos(lat) * cos(lon + kLonEvery);
+			c.y = sphere.center.y + sphere.radius * sin(lat);
+			c.z = sphere.center.z + sphere.radius * cos(lat) * sin(lon + kLonEvery);
 			//画面上の座標を求める
-			Vector3 ndcA = Transform(a[latIndex], worldViewProjectionMatrix);
-			Vector3 ndcB = Transform(b[latIndex], worldViewProjectionMatrix);
-			Vector3 ndcC = Transform(c[latIndex], worldViewProjectionMatrix);
+			Vector3 ndcA = Transform(a, worldViewProjectionMatrix);
+			Vector3 ndcB = Transform(b, worldViewProjectionMatrix);
+			Vector3 ndcC = Transform(c, worldViewProjectionMatrix);
 			Vector3 screenA = Transform(ndcA, viewPortMatrix);
 			Vector3 screenB = Transform(ndcB, viewPortMatrix);
 			Vector3 screenC = Transform(ndcC, viewPortMatrix);
@@ -50,6 +50,7 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			Novice::DrawLine((int)screenA.x, (int)screenA.y, (int)screenC.x, (int)screenC.y, color);
 		}
 	}
+
 }
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) {
