@@ -649,3 +649,17 @@ Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
 	return Add(o, cp);
 }
+
+/// <summary>
+/// 冲突判定 球与球
+/// </summary>
+/// <param name="sphere1">球1</param>
+/// <param name="sphere2">球2</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere1, const Sphere& sphere2) {
+	float distance = Length(Subtract(sphere1.center, sphere2.center));
+	if (distance > sphere1.radius + sphere2.radius) {
+		return false;
+	}
+	return true;
+}

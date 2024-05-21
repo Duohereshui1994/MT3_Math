@@ -4,12 +4,32 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-bool IsSphereCollision(const Sphere& sphere1, const Sphere& sphere2) {
-	float distance = Length(Subtract(sphere1.center, sphere2.center));
-	if (distance > sphere1.radius + sphere2.radius) {
+typedef struct {
+	Vector3 normal;//法线
+	float distance;//距离
+}Plane;
+
+/// <summary>
+/// 冲突判定 球和平面
+/// </summary>
+/// <param name="sphere">球</param>
+/// <param name="plane">平面</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere, const Plane& plane) {
+
+	Vector3 n = plane.normal;
+	Vector3 c = sphere.center;
+
+	float k = Dot(n, c) - plane.distance;
+
+	float distance = fabs(k);
+
+	if (distance > sphere.radius) {
 		return false;
 	}
+
 	return true;
+
 }
 
 
@@ -31,12 +51,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,1.9f ,-6.49f };
 
 
-	Sphere sphere[2];
-	sphere[0].center = { 0.0f,0.0f,0.0f };
-	sphere[0].radius = 0.5f;
 
-	sphere[1].center = { 1.0f,0.0f,1.0f };
-	sphere[1].radius = 0.2f;
 
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -67,10 +82,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
-		ImGui::DragFloat3("sphere[0] Position", &sphere[0].center.x, 0.01f);
-		ImGui::DragFloat("sphere[0] radius", &sphere[0].radius, 0.01f);
-		ImGui::DragFloat3("sphere[1] Position", &sphere[1].center.x, 0.01f);
-		ImGui::DragFloat("sphere[1] radius", &sphere[1].radius, 0.01f);
+
 		ImGui::End();
 
 #endif 
@@ -85,14 +97,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
 
-		if (IsSphereCollision(sphere[0], sphere[1])) {
-			DrawSphere(sphere[0], worldViewProjectionMatrix, viewPortMatrix, RED);
-		}
-		else {
-			DrawSphere(sphere[0], worldViewProjectionMatrix, viewPortMatrix, WHITE);
-		}
-
-		DrawSphere(sphere[1], worldViewProjectionMatrix, viewPortMatrix, WHITE);
 
 		///
 		/// ↑描画処理ここまで
