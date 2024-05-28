@@ -4,60 +4,20 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-typedef struct {
-	Vector3 normal;//法线
-	float distance;//距离
-}Plane;
+bool IsCollision(const Segment& segment, const Plane& plane) {
+	float dot = Dot(plane.normal, segment.diff);
 
-/// <summary>
-/// 冲突判定 球和平面
-/// </summary>
-/// <param name="sphere">球</param>
-/// <param name="plane">平面</param>
-/// <returns></returns>
-bool IsCollision(const Sphere& sphere, const Plane& plane) {
+	if (dot == 0.0f) {
+		return false;
+	}
 
-	Vector3 n = plane.normal;
-	Vector3 c = sphere.center;
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
 
-	float k = Dot(n, c) - plane.distance;
-
-	float distance = fabs(k);
-
-	if (distance > sphere.radius) {
+	if (t < 0.0f || t > 1.0f) {
 		return false;
 	}
 
 	return true;
-
-}
-
-Vector3 Perpendicular(const Vector3& vector) {
-	if (vector.x != 0.0f || vector.y != 0.0f) {
-		return { -vector.y, vector.x, 0.0f };
-	}
-	return { 0.0f,-vector.z,vector.y };
-}
-
-void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-	Vector3 center = Multiply(plane.distance, plane.normal);
-	Vector3 perpendicular[4];
-	perpendicular[0] = Normalize(Perpendicular(plane.normal));
-	perpendicular[1] = { -perpendicular[0].x,-perpendicular[0].y,-perpendicular[0].z };
-	perpendicular[2] = Cross(plane.normal, perpendicular[0]);
-	perpendicular[3] = { -perpendicular[2].x,-perpendicular[2].y,-perpendicular[2].z };
-
-	Vector3 points[4];
-	for (uint32_t index = 0; index < 4; ++index) {
-		Vector3 extend = Multiply(2.0f, perpendicular[index]);
-		Vector3 point = Add(center, extend);
-		points[index] = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
-	}
-
-	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[3].x, (int)points[3].y, color);
-	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 
 }
 
@@ -77,10 +37,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 rotate{};
 	Vector3 translate{};
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
-	Vector3 cameraTranslate{ 0.0f,1.9f ,-6.49f };
+	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
-	Sphere sphere{ {0.0f,0.0f,0.0f},0.5f };
+	Segment segment{ {-2.0f, -1.0f,0.0f},{3.0f,2.0f,2.0f} };
 	Plane plane{ {0.0f,1.0f,0.0f},1.0f };
+
+
 
 
 
@@ -105,17 +67,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
 
-
+		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
 
 
 #ifdef _DEBUG
+
+		MouseCamera(&cameraTranslate, &cameraRotate, keys);
+
+		MouseCameraDrawIcon(1280, 720, true);
+
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
-		ImGui::DragFloat3("SphereCenter", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("SphereRadius", &sphere.radius, 0.01f);
-		ImGui::DragFloat3("PlaneNormal", &plane.normal.x, 0.01f);
-		ImGui::DragFloat("PlaneDistance", &plane.distance, 0.01f);
+		ImGui::DragFloat("PlaneTranslate", &plane.distance, 0.01f);
+		ImGui::DragFloat3("PlaneRotate", &plane.normal.x, 0.01f);
+
+		ImGui::DragFloat3("SegmentTranslate", &segment.origin.x, 0.01f);
+
+
 		ImGui::End();
 
 #endif 
@@ -129,14 +99,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		if (IsCollision(sphere, plane)) {
-			DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, RED);
+		if (IsCollision(segment, plane)) {
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
 		}
 		else {
-			DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 		}
 
 		DrawPlane(plane, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+
 
 
 

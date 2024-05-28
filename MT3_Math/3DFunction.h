@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <assert.h>
+#include <Vector2.h>
 #include <Vector3.h>
 #include <Matrix4x4.h>
 #include "Novice.h"
@@ -664,3 +665,209 @@ bool IsCollision(const Sphere& sphere1, const Sphere& sphere2) {
 	}
 	return true;
 }
+
+/// <summary>
+/// 平面结构体
+/// </summary>
+typedef struct {
+	Vector3 normal;//法线
+	float distance;//距离
+}Plane;
+
+/// <summary>
+/// 冲突判定 球和平面
+/// </summary>
+/// <param name="sphere">球</param>
+/// <param name="plane">平面</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere, const Plane& plane) {
+
+	Vector3 n = plane.normal;
+	Vector3 c = sphere.center;
+
+	float k = Dot(n, c) - plane.distance;
+
+	float distance = fabs(k);
+
+	if (distance > sphere.radius) {
+		return false;
+	}
+
+	return true;
+
+}
+
+Vector3 Perpendicular(const Vector3& vector) {
+	if (vector.x != 0.0f || vector.y != 0.0f) {
+		return { -vector.y, vector.x, 0.0f };
+	}
+	return { 0.0f,-vector.z,vector.y };
+}
+
+/// <summary>
+/// 画平面
+/// </summary>
+/// <param name="plane">平面参数</param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewportMatrix"></param>
+/// <param name="color"></param>
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Vector3 center = Multiply(plane.distance, plane.normal);
+	Vector3 perpendicular[4];
+	perpendicular[0] = Normalize(Perpendicular(plane.normal));
+	perpendicular[1] = { -perpendicular[0].x,-perpendicular[0].y,-perpendicular[0].z };
+	perpendicular[2] = Cross(plane.normal, perpendicular[0]);
+	perpendicular[3] = { -perpendicular[2].x,-perpendicular[2].y,-perpendicular[2].z };
+
+	Vector3 points[4];
+	for (uint32_t index = 0; index < 4; ++index) {
+		Vector3 extend = Multiply(2.0f, perpendicular[index]);
+		Vector3 point = Add(center, extend);
+		points[index] = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
+	}
+
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[3].x, (int)points[3].y, color);
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
+
+}
+
+
+
+#pragma region Camera Controller
+// マウスでカメラを移動
+Vector2 preMousePos{}; // 前１フレームの位置
+// マウスでカメラを制御する
+void MouseCamera(Vector3* cameraPos, Vector3* cameraRotate, char key[]) {
+	float moveSpeed = 0.1f;     // キーボードで移動のスピード
+	float wheelSpeed = 0.3f;    // マウスのホイールスクロールのスピード
+	float rotationSpeed = 0.4f; // マウスの右キーで回るスピード
+	float dragSpeed = 0.5f;     // マウスの中キーで移動のスピード
+
+	Vector3 front{}, right{}, up{}, move{}; // カメラの前・横・上の向きと総合の移動ベクトル
+	bool isMouseMove = false;               // マウスで移動
+	//  カメラの前方向を計算
+	front.x = sinf(cameraRotate->y) * cosf(cameraRotate->x);
+	front.y = -sinf(cameraRotate->x);
+	front.z = cosf(cameraRotate->y) * cosf(cameraRotate->x);
+	front = Normalize(front);
+	// カメラの横方向を計算
+	Vector3 worldUp{ 0, 1, 0 };
+	right = Cross(front, worldUp);
+	right = Normalize(right);
+	// カメラの上方向を計算
+	up = Cross(right, front);
+	up = Normalize(up);
+
+	if (Novice::IsPressMouse(1)) {
+		// キーボードで移動
+		if (key[DIK_W]) {
+			move = Add(move, front);
+		}
+		else if (key[DIK_S]) {
+			move = Add(move, Multiply(-1, front));
+		}
+		if (key[DIK_D]) {
+			move = Add(move, Multiply(-1, right));
+		}
+		else if (key[DIK_A]) {
+			move = Add(move, right);
+		}
+	}
+	else {
+		// マウスのホイールスクロール
+		isMouseMove = true;
+		move = Multiply(float(Novice::GetWheel()) * wheelSpeed * 0.01f, front);
+	}
+
+	// カメラをマウスで回転
+	int mousePosX, mousePosY;
+	Novice::GetMousePosition(&mousePosX, &mousePosY);
+	Vector2 currentMousePos{};
+	if (Novice::IsPressMouse(1)) {
+		// マウスの右キー
+		currentMousePos = { float(mousePosX), float(mousePosY) };
+		cameraRotate->x += (currentMousePos.y - preMousePos.y) * rotationSpeed * 0.01f;
+		cameraRotate->y += (currentMousePos.x - preMousePos.x) * rotationSpeed * 0.01f;
+		preMousePos = { float(mousePosX), float(mousePosY) };
+	}
+	else if (Novice::IsPressMouse(2)) {
+		// マウスの中キー
+		isMouseMove = true;
+		currentMousePos = { float(mousePosX), float(mousePosY) };
+		Vector3 mouseVector = { currentMousePos.x - preMousePos.x, currentMousePos.y - preMousePos.y, 0 };
+		if (abs(mouseVector.x) > 1 || abs(mouseVector.y) > 1) {
+			move = Add(move, Multiply(mouseVector.x * dragSpeed * 0.01f, right));
+			move = Add(move, Multiply(mouseVector.y * dragSpeed * 0.01f, up));
+		}
+		preMousePos = { float(mousePosX), float(mousePosY) };
+	}
+	else {
+		preMousePos = { float(mousePosX), float(mousePosY) };
+	}
+
+	// 正規化、速度は同じにするために
+	if (!isMouseMove) {
+		if (move.x != 0 || move.y != 0 || move.z != 0) {
+			move = Normalize(move);
+			move = Multiply(moveSpeed, move);
+		}
+	}
+	cameraPos->x += move.x;
+	cameraPos->y += move.y;
+	cameraPos->z += move.z;
+}
+// マウスでカメラを制御する時アイコンを表す
+void MouseCameraDrawIcon(float windowWidth, float windowHeight, bool showHelpText) {
+	windowWidth;
+	if (showHelpText) {
+		// Text
+		float textLine = 17;
+		Vector2 textPos{ 0 + 5, windowHeight - textLine * 5 - 5 };
+		Novice::ScreenPrintf(int(textPos.x), int(textPos.y), "----- Mouse Camera Usage -----");
+		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 1), "(The control logic is the same as Unity)");
+		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 2), "Right mouse: camera rotation");
+		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 3), "Middle mouse: camera movement and zoom in/out");
+		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 4), "Right mouse + WASD: camera move");
+	}
+	// Icon
+	int mouseX, mouseY;
+	Novice::GetMousePosition(&mouseX, &mouseY);
+	Vector2 currentMousePos{ float(mouseX), float(mouseY) };
+	Vector2 eyeSize{ 9, 5 }, boxSize{ 3, 3 }, boxPos{ 9, 7 }; // マウスの右キーのアイコン
+	Vector2 headSize{ 6, 7 }, fingerSize{ 3, 9 };           // マウスの中キーのアイコン
+	if (Novice::IsPressMouse(1)) {
+		// Eye
+		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.x), int(eyeSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.x + 1), int(eyeSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.y - 1), int(eyeSize.y - 1), 0, BLACK, kFillModeWireFrame);
+		// MoveBox
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x - boxSize.x - 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x - boxSize.x - 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x + boxSize.x + 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + boxPos.x + boxSize.x + 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
+	}
+	else if (Novice::IsPressMouse(2)) {
+		// Finger
+		Novice::DrawBox(int(currentMousePos.x - 5), int(currentMousePos.y - 13), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x - 5), int(currentMousePos.y - 13), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x - 8), int(currentMousePos.y - 7), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x - 8), int(currentMousePos.y - 7), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x - 1), int(currentMousePos.y - 14), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x - 1), int(currentMousePos.y - 14), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x + 6), int(currentMousePos.y - 10), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + 6), int(currentMousePos.y - 10), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		Novice::DrawBox(int(currentMousePos.x + 3), int(currentMousePos.y - 12), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawBox(int(currentMousePos.x + 3), int(currentMousePos.y - 12), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
+		// Head
+		Novice::DrawEllipse((int)currentMousePos.x + 2, (int)currentMousePos.y + 1, int(headSize.x), int(headSize.y), 0, WHITE, kFillModeSolid);
+		Novice::DrawEllipse((int)currentMousePos.x + 2, (int)currentMousePos.y + 1, int(headSize.x + 1), int(headSize.y + 1), 0, BLACK, kFillModeWireFrame);
+	}
+}
+#pragma endregion
+
