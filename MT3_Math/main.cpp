@@ -4,23 +4,66 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-bool IsCollision(const Segment& segment, const Plane& plane) {
-	float dot = Dot(plane.normal, segment.diff);
+/// <summary>
+/// 三角形结构体
+/// </summary>
+typedef struct {
+	Vector3 vertices[3];
+}Triangle;
 
+/// <summary>
+/// 冲突判定 三角形和线
+/// </summary>
+/// <param name="triangle"></param>
+/// <param name="segment"></param>
+/// <returns></returns>
+bool IsCollision(const Triangle& triangle, const Segment& segment) {
+
+	//计算三角形所在平面
+	Vector3 ab = Subtract(triangle.vertices[1], triangle.vertices[0]);
+	Vector3 ac = Subtract(triangle.vertices[2], triangle.vertices[0]);
+	Vector3 normal = Cross(ab, ac);
+	float distance = Dot(normal, triangle.vertices[0]);
+
+
+	float dot = Dot(normal, segment.diff);
 	if (dot == 0.0f) {
 		return false;
 	}
 
-	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
-
+	//计算t
+	float t = (distance - Dot(normal, segment.origin)) / dot;
 	if (t < 0.0f || t > 1.0f) {
 		return false;
 	}
 
-	return true;
-
+	//计算交点在不在三角形内
+	Vector3 p = Add(segment.origin, Multiply(t, segment.diff));
+	Vector3 crossAB = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(p, triangle.vertices[1]));
+	Vector3 crossBC = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(p, triangle.vertices[2]));
+	Vector3 crossCA = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(p, triangle.vertices[0]));
+	if (Dot(crossAB, normal) >= 0 && Dot(crossBC, normal) >= 0 && Dot(crossCA, normal) >= 0) {
+		return true;
+	}
+	return false;
 }
 
+
+/// <summary>
+/// 画三角形
+/// </summary>
+/// <param name="triangle"></param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewPortMatrix"></param>
+/// <param name="color"></param>
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
+	Vector3 screenVertices[3];
+	for (uint32_t i = 0; i < 3; ++i) {
+		Vector3 ndcVertex = Transform(triangle.vertices[i], viewProjectionMatrix);
+		screenVertices[i] = Transform(ndcVertex, viewPortMatrix);
+	}
+	Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), color, kFillModeWireFrame);
+}
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -39,8 +82,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
-	Segment segment{ {-2.0f, -1.0f,0.0f},{3.0f,2.0f,2.0f} };
-	Plane plane{ {0.0f,1.0f,0.0f},1.0f };
+	Segment segment{ {0.0f, -0.0f,-1.0f},{0.0f,0.0f,1.0f} };
+	Triangle triangle;
+	triangle.vertices[0] = { -1.0f, 0.0f, 0.0f };
+	triangle.vertices[1] = { 1.0f, 0.0f, 0.0f };
+	triangle.vertices[2] = { 0.0f, 1.0f, 0.0f };
 
 
 
@@ -80,8 +126,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
-		ImGui::DragFloat("PlaneTranslate", &plane.distance, 0.01f);
-		ImGui::DragFloat3("PlaneRotate", &plane.normal.x, 0.01f);
+
 
 		ImGui::DragFloat3("SegmentTranslate", &segment.origin.x, 0.01f);
 
@@ -99,14 +144,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		if (IsCollision(segment, plane)) {
+		if (IsCollision(triangle, segment)) {
 			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
 		}
 		else {
 			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 		}
 
-		DrawPlane(plane, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+		DrawTriangle(triangle, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 
 
 

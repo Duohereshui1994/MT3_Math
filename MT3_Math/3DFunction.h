@@ -7,6 +7,53 @@
 #include <Matrix4x4.h>
 #include "Novice.h"
 
+#pragma region 结构体
+
+/// <summary>
+/// 定义 球的结构体
+/// </summary>
+typedef struct {
+	Vector3 center;
+	float radius;
+}Sphere;
+
+/// <summary>
+/// 线
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Line;
+
+/// <summary>
+/// 半直线
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Ray;
+
+/// <summary>
+/// 线分
+/// </summary>
+typedef struct {
+	Vector3 origin;		//起点
+	Vector3 diff;		//到终点的差分向量
+}Segment;
+
+/// <summary>
+/// 平面结构体
+/// </summary>
+typedef struct {
+	Vector3 normal;//法线
+	float distance;//距离
+}Plane;
+
+#pragma endregion
+
+#pragma region 数学公式
+
+
 
 /// <summary>
 /// 加算
@@ -434,6 +481,10 @@ Vector3 Cross(const Vector3& v1, const Vector3& v2) {
 	return result;
 }
 
+#pragma endregion
+
+#pragma region 矩阵表示
+
 /// <summary>
 /// 表示
 /// </summary>
@@ -459,14 +510,43 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label
 		}
 	}
 }
+#pragma endregion
+/// <summary>
+/// V1 在 V2上的正射影
+/// </summary>
+/// <param name="v1"></param>
+/// <param name="v2"></param>
+/// <returns></returns>
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+
+	float dot = Dot(v1, v2);
+	float len = LengthSquared(v2);
+	float t = dot / len;
+	return Multiply(t, v2);
+}
 
 /// <summary>
-/// 定义 球的结构体
+/// 点和线的最近距离的点
 /// </summary>
-typedef struct {
-	Vector3 center;
-	float radius;
-}Sphere;
+/// <param name="point">点</param>
+/// <param name="segment">目标线分</param>
+/// <returns>最近的距离的点</returns>
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+
+	Vector3 o = segment.origin;
+	Vector3 p = point;
+	Vector3 a = Subtract(p, o);
+	Vector3 b = segment.diff;
+
+
+	Vector3 cp = Project(a, b);
+
+	return Add(o, cp);
+}
+
+#pragma region 画各种
+
+
 
 /// <summary>
 /// 画球
@@ -595,108 +675,6 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) 
 	}
 }
 
-/// <summary>
-/// 线
-/// </summary>
-typedef struct {
-	Vector3 origin;		//起点
-	Vector3 diff;		//到终点的差分向量
-}Line;
-
-/// <summary>
-/// 半直线
-/// </summary>
-typedef struct {
-	Vector3 origin;		//起点
-	Vector3 diff;		//到终点的差分向量
-}Ray;
-
-/// <summary>
-/// 线分
-/// </summary>
-typedef struct {
-	Vector3 origin;		//起点
-	Vector3 diff;		//到终点的差分向量
-}Segment;
-
-/// <summary>
-/// V1 在 V2上的正射影
-/// </summary>
-/// <param name="v1"></param>
-/// <param name="v2"></param>
-/// <returns></returns>
-Vector3 Project(const Vector3& v1, const Vector3& v2) {
-
-	float dot = Dot(v1, v2);
-	float len = LengthSquared(v2);
-	float t = dot / len;
-	return Multiply(t, v2);
-}
-
-/// <summary>
-/// 点和线的最近距离的点
-/// </summary>
-/// <param name="point">点</param>
-/// <param name="segment">目标线分</param>
-/// <returns>最近的距离的点</returns>
-Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
-
-	Vector3 o = segment.origin;
-	Vector3 p = point;
-	Vector3 a = Subtract(p, o);
-	Vector3 b = segment.diff;
-
-
-	Vector3 cp = Project(a, b);
-
-	return Add(o, cp);
-}
-
-/// <summary>
-/// 冲突判定 球与球
-/// </summary>
-/// <param name="sphere1">球1</param>
-/// <param name="sphere2">球2</param>
-/// <returns></returns>
-bool IsCollision(const Sphere& sphere1, const Sphere& sphere2) {
-	float distance = Length(Subtract(sphere1.center, sphere2.center));
-	if (distance > sphere1.radius + sphere2.radius) {
-		return false;
-	}
-	return true;
-}
-
-/// <summary>
-/// 平面结构体
-/// </summary>
-typedef struct {
-	Vector3 normal;//法线
-	float distance;//距离
-}Plane;
-
-/// <summary>
-/// 冲突判定 球和平面
-/// </summary>
-/// <param name="sphere">球</param>
-/// <param name="plane">平面</param>
-/// <returns></returns>
-bool IsCollision(const Sphere& sphere, const Plane& plane) {
-
-	Vector3 n = plane.normal;
-	Vector3 c = sphere.center;
-
-	float k = Dot(n, c) - plane.distance;
-
-	float distance = fabs(k);
-
-	if (distance > sphere.radius) {
-		return false;
-	}
-
-	return true;
-
-}
-
 Vector3 Perpendicular(const Vector3& vector) {
 	if (vector.x != 0.0f || vector.y != 0.0f) {
 		return { -vector.y, vector.x, 0.0f };
@@ -732,8 +710,73 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 
 }
+#pragma endregion
+
+#pragma region Collision 判定
+/// <summary>
+/// 冲突判定 球与球
+/// </summary>
+/// <param name="sphere1">球1</param>
+/// <param name="sphere2">球2</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere1, const Sphere& sphere2) {
+	float distance = Length(Subtract(sphere1.center, sphere2.center));
+	if (distance > sphere1.radius + sphere2.radius) {
+		return false;
+	}
+	return true;
+}
 
 
+
+/// <summary>
+/// 冲突判定 球和平面
+/// </summary>
+/// <param name="sphere">球</param>
+/// <param name="plane">平面</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere, const Plane& plane) {
+
+	Vector3 n = plane.normal;
+	Vector3 c = sphere.center;
+
+	float k = Dot(n, c) - plane.distance;
+
+	float distance = fabs(k);
+
+	if (distance > sphere.radius) {
+		return false;
+	}
+
+	return true;
+
+}
+
+
+/// <summary>
+/// 冲突判定 线和平面
+/// </summary>
+/// <param name="segment"></param>
+/// <param name="plane"></param>
+/// <returns></returns>
+bool IsCollision(const Segment& segment, const Plane& plane) {
+	float dot = Dot(plane.normal, segment.diff);
+
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+
+	if (t < 0.0f || t > 1.0f) {
+		return false;
+	}
+
+	return true;
+
+}
+
+#pragma endregion
 
 #pragma region Camera Controller
 // マウスでカメラを移動
