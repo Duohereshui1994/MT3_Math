@@ -55,6 +55,15 @@ typedef struct {
 typedef struct {
 	Vector3 vertices[3];
 }Triangle;
+
+/// <summary>
+/// AABB结构体
+/// </summary>
+typedef struct {
+	Vector3 min;
+	Vector3 max;
+}AABB;
+
 #pragma endregion
 
 #pragma region 数学公式
@@ -737,6 +746,48 @@ void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatri
 	}
 	Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), color, kFillModeWireFrame);
 }
+
+/// <summary>
+/// 画AABB
+/// </summary>
+/// <param name="aabb"></param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewPortMatrix"></param>
+/// <param name="color"></param>
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
+	Vector3 points[8];
+	points[0] = Vector3(aabb.min.x, aabb.min.y, aabb.min.z);
+	points[1] = Vector3(aabb.max.x, aabb.min.y, aabb.min.z);
+	points[2] = Vector3(aabb.max.x, aabb.min.y, aabb.max.z);
+	points[3] = Vector3(aabb.min.x, aabb.min.y, aabb.max.z);
+
+	points[4] = Vector3(aabb.min.x, aabb.max.y, aabb.min.z);
+	points[5] = Vector3(aabb.max.x, aabb.max.y, aabb.min.z);
+	points[6] = Vector3(aabb.max.x, aabb.max.y, aabb.max.z);
+	points[7] = Vector3(aabb.min.x, aabb.max.y, aabb.max.z);
+
+	Vector3 screenPoints[8];
+	for (uint32_t index = 0; index < 8; ++index) {
+		Vector3 ndcVertex = Transform(points[index], viewProjectionMatrix);
+		screenPoints[index] = Transform(ndcVertex, viewPortMatrix);
+	}
+
+	Novice::DrawLine((int)screenPoints[0].x, (int)screenPoints[0].y, (int)screenPoints[1].x, (int)screenPoints[1].y, color);
+	Novice::DrawLine((int)screenPoints[1].x, (int)screenPoints[1].y, (int)screenPoints[2].x, (int)screenPoints[2].y, color);
+	Novice::DrawLine((int)screenPoints[2].x, (int)screenPoints[2].y, (int)screenPoints[3].x, (int)screenPoints[3].y, color);
+	Novice::DrawLine((int)screenPoints[3].x, (int)screenPoints[3].y, (int)screenPoints[0].x, (int)screenPoints[0].y, color);
+
+	Novice::DrawLine((int)screenPoints[4].x, (int)screenPoints[4].y, (int)screenPoints[5].x, (int)screenPoints[5].y, color);
+	Novice::DrawLine((int)screenPoints[5].x, (int)screenPoints[5].y, (int)screenPoints[6].x, (int)screenPoints[6].y, color);
+	Novice::DrawLine((int)screenPoints[6].x, (int)screenPoints[6].y, (int)screenPoints[7].x, (int)screenPoints[7].y, color);
+	Novice::DrawLine((int)screenPoints[7].x, (int)screenPoints[7].y, (int)screenPoints[4].x, (int)screenPoints[4].y, color);
+
+	Novice::DrawLine((int)screenPoints[0].x, (int)screenPoints[0].y, (int)screenPoints[4].x, (int)screenPoints[4].y, color);
+	Novice::DrawLine((int)screenPoints[1].x, (int)screenPoints[1].y, (int)screenPoints[5].x, (int)screenPoints[5].y, color);
+	Novice::DrawLine((int)screenPoints[2].x, (int)screenPoints[2].y, (int)screenPoints[6].x, (int)screenPoints[6].y, color);
+	Novice::DrawLine((int)screenPoints[3].x, (int)screenPoints[3].y, (int)screenPoints[7].x, (int)screenPoints[7].y, color);
+}
+
 #pragma endregion
 
 #pragma region Collision 判定
@@ -835,6 +886,37 @@ bool IsCollision(const Triangle& triangle, const Segment& segment) {
 	Vector3 crossBC = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(p, triangle.vertices[2]));
 	Vector3 crossCA = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(p, triangle.vertices[0]));
 	if (Dot(crossAB, normal) >= 0 && Dot(crossBC, normal) >= 0 && Dot(crossCA, normal) >= 0) {
+		return true;
+	}
+	return false;
+}
+
+/// <summary>
+/// 检测AABB是否合理
+/// </summary>
+/// <param name="aabb"></param>
+void CorrectAABB(AABB& aabb) {
+	aabb.max.x = std::max(aabb.max.x, aabb.min.x);
+	aabb.min.x = std::min(aabb.min.x, aabb.max.x);
+
+	aabb.max.y = std::max(aabb.max.y, aabb.min.y);
+	aabb.min.y = std::min(aabb.min.y, aabb.max.y);
+
+	aabb.max.z = std::max(aabb.max.z, aabb.min.z);
+	aabb.min.z = std::min(aabb.min.z, aabb.max.z);
+}
+
+/// <summary>
+/// 冲突判定 AABB与AABB
+/// </summary>
+/// <param name="aabb1"></param>
+/// <param name="aabb2"></param>
+/// <returns></returns>
+bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
+
+	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
+		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
+		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
 		return true;
 	}
 	return false;
