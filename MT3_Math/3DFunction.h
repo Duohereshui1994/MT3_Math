@@ -49,6 +49,12 @@ typedef struct {
 	float distance;//距离
 }Plane;
 
+/// <summary>
+/// 三角形结构体
+/// </summary>
+typedef struct {
+	Vector3 vertices[3];
+}Triangle;
 #pragma endregion
 
 #pragma region 数学公式
@@ -511,6 +517,9 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label
 	}
 }
 #pragma endregion
+
+#pragma region 正射影相关
+
 /// <summary>
 /// V1 在 V2上的正射影
 /// </summary>
@@ -543,6 +552,8 @@ Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
 	return Add(o, cp);
 }
+
+#pragma endregion
 
 #pragma region 画各种
 
@@ -710,6 +721,22 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 
 }
+
+/// <summary>
+/// 画三角形
+/// </summary>
+/// <param name="triangle"></param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewPortMatrix"></param>
+/// <param name="color"></param>
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
+	Vector3 screenVertices[3];
+	for (uint32_t i = 0; i < 3; ++i) {
+		Vector3 ndcVertex = Transform(triangle.vertices[i], viewProjectionMatrix);
+		screenVertices[i] = Transform(ndcVertex, viewPortMatrix);
+	}
+	Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), color, kFillModeWireFrame);
+}
 #pragma endregion
 
 #pragma region Collision 判定
@@ -774,6 +801,43 @@ bool IsCollision(const Segment& segment, const Plane& plane) {
 
 	return true;
 
+}
+
+/// <summary>
+/// 冲突判定 三角形和线
+/// </summary>
+/// <param name="triangle"></param>
+/// <param name="segment"></param>
+/// <returns></returns>
+bool IsCollision(const Triangle& triangle, const Segment& segment) {
+
+	//计算三角形所在平面
+	Vector3 ab = Subtract(triangle.vertices[1], triangle.vertices[0]);
+	Vector3 ac = Subtract(triangle.vertices[2], triangle.vertices[0]);
+	Vector3 normal = Cross(ab, ac);
+	float distance = Dot(normal, triangle.vertices[0]);
+
+
+	float dot = Dot(normal, segment.diff);
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	//计算t
+	float t = (distance - Dot(normal, segment.origin)) / dot;
+	if (t < 0.0f || t > 1.0f) {
+		return false;
+	}
+
+	//计算交点在不在三角形内
+	Vector3 p = Add(segment.origin, Multiply(t, segment.diff));
+	Vector3 crossAB = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(p, triangle.vertices[1]));
+	Vector3 crossBC = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(p, triangle.vertices[2]));
+	Vector3 crossCA = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(p, triangle.vertices[0]));
+	if (Dot(crossAB, normal) >= 0 && Dot(crossBC, normal) >= 0 && Dot(crossCA, normal) >= 0) {
+		return true;
+	}
+	return false;
 }
 
 #pragma endregion

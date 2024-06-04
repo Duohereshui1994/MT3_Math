@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <Novice.h>
 #include <imgui.h>
 #include "3DFunction.h"
@@ -5,64 +6,83 @@
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
 /// <summary>
-/// 三角形结构体
+/// AABB结构体
 /// </summary>
 typedef struct {
-	Vector3 vertices[3];
-}Triangle;
+	Vector3 min;
+	Vector3 max;
+}AABB;
 
 /// <summary>
-/// 冲突判定 三角形和线
+/// 检测AABB是否合理
 /// </summary>
-/// <param name="triangle"></param>
-/// <param name="segment"></param>
+/// <param name="aabb"></param>
+void CorrectAABB(AABB& aabb) {
+	aabb.max.x = std::max(aabb.max.x, aabb.min.x);
+	aabb.min.x = std::min(aabb.min.x, aabb.max.x);
+
+	aabb.max.y = std::max(aabb.max.y, aabb.min.y);
+	aabb.min.y = std::min(aabb.min.y, aabb.max.y);
+
+	aabb.max.z = std::max(aabb.max.z, aabb.min.z);
+	aabb.min.z = std::min(aabb.min.z, aabb.max.z);
+}
+
+/// <summary>
+/// 冲突判定 AABB与AABB
+/// </summary>
+/// <param name="aabb1"></param>
+/// <param name="aabb2"></param>
 /// <returns></returns>
-bool IsCollision(const Triangle& triangle, const Segment& segment) {
+bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 
-	//计算三角形所在平面
-	Vector3 ab = Subtract(triangle.vertices[1], triangle.vertices[0]);
-	Vector3 ac = Subtract(triangle.vertices[2], triangle.vertices[0]);
-	Vector3 normal = Cross(ab, ac);
-	float distance = Dot(normal, triangle.vertices[0]);
-
-
-	float dot = Dot(normal, segment.diff);
-	if (dot == 0.0f) {
-		return false;
-	}
-
-	//计算t
-	float t = (distance - Dot(normal, segment.origin)) / dot;
-	if (t < 0.0f || t > 1.0f) {
-		return false;
-	}
-
-	//计算交点在不在三角形内
-	Vector3 p = Add(segment.origin, Multiply(t, segment.diff));
-	Vector3 crossAB = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(p, triangle.vertices[1]));
-	Vector3 crossBC = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(p, triangle.vertices[2]));
-	Vector3 crossCA = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(p, triangle.vertices[0]));
-	if (Dot(crossAB, normal) >= 0 && Dot(crossBC, normal) >= 0 && Dot(crossCA, normal) >= 0) {
+	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
+		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
+		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
 		return true;
 	}
 	return false;
 }
 
-
 /// <summary>
-/// 画三角形
+/// 画AABB
 /// </summary>
-/// <param name="triangle"></param>
+/// <param name="aabb"></param>
 /// <param name="viewProjectionMatrix"></param>
 /// <param name="viewPortMatrix"></param>
 /// <param name="color"></param>
-void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
-	Vector3 screenVertices[3];
-	for (uint32_t i = 0; i < 3; ++i) {
-		Vector3 ndcVertex = Transform(triangle.vertices[i], viewProjectionMatrix);
-		screenVertices[i] = Transform(ndcVertex, viewPortMatrix);
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
+	Vector3 points[8];
+	points[0] = Vector3(aabb.min.x, aabb.min.y, aabb.min.z);
+	points[1] = Vector3(aabb.max.x, aabb.min.y, aabb.min.z);
+	points[2] = Vector3(aabb.max.x, aabb.min.y, aabb.max.z);
+	points[3] = Vector3(aabb.min.x, aabb.min.y, aabb.max.z);
+
+	points[4] = Vector3(aabb.min.x, aabb.max.y, aabb.min.z);
+	points[5] = Vector3(aabb.max.x, aabb.max.y, aabb.min.z);
+	points[6] = Vector3(aabb.max.x, aabb.max.y, aabb.max.z);
+	points[7] = Vector3(aabb.min.x, aabb.max.y, aabb.max.z);
+
+	Vector3 screenPoints[8];
+	for (uint32_t index = 0; index < 8; ++index) {
+		Vector3 ndcVertex = Transform(points[index], viewProjectionMatrix);
+		screenPoints[index] = Transform(ndcVertex, viewPortMatrix);
 	}
-	Novice::DrawTriangle((int)(screenVertices[0].x), (int)(screenVertices[0].y), (int)(screenVertices[1].x), (int)(screenVertices[1].y), (int)(screenVertices[2].x), (int)(screenVertices[2].y), color, kFillModeWireFrame);
+
+	Novice::DrawLine((int)screenPoints[0].x, (int)screenPoints[0].y, (int)screenPoints[1].x, (int)screenPoints[1].y, color);
+	Novice::DrawLine((int)screenPoints[1].x, (int)screenPoints[1].y, (int)screenPoints[2].x, (int)screenPoints[2].y, color);
+	Novice::DrawLine((int)screenPoints[2].x, (int)screenPoints[2].y, (int)screenPoints[3].x, (int)screenPoints[3].y, color);
+	Novice::DrawLine((int)screenPoints[3].x, (int)screenPoints[3].y, (int)screenPoints[0].x, (int)screenPoints[0].y, color);
+
+	Novice::DrawLine((int)screenPoints[4].x, (int)screenPoints[4].y, (int)screenPoints[5].x, (int)screenPoints[5].y, color);
+	Novice::DrawLine((int)screenPoints[5].x, (int)screenPoints[5].y, (int)screenPoints[6].x, (int)screenPoints[6].y, color);
+	Novice::DrawLine((int)screenPoints[6].x, (int)screenPoints[6].y, (int)screenPoints[7].x, (int)screenPoints[7].y, color);
+	Novice::DrawLine((int)screenPoints[7].x, (int)screenPoints[7].y, (int)screenPoints[4].x, (int)screenPoints[4].y, color);
+
+	Novice::DrawLine((int)screenPoints[0].x, (int)screenPoints[0].y, (int)screenPoints[4].x, (int)screenPoints[4].y, color);
+	Novice::DrawLine((int)screenPoints[1].x, (int)screenPoints[1].y, (int)screenPoints[5].x, (int)screenPoints[5].y, color);
+	Novice::DrawLine((int)screenPoints[2].x, (int)screenPoints[2].y, (int)screenPoints[6].x, (int)screenPoints[6].y, color);
+	Novice::DrawLine((int)screenPoints[3].x, (int)screenPoints[3].y, (int)screenPoints[7].x, (int)screenPoints[7].y, color);
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -82,13 +102,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
-	Segment segment{ {0.0f, -0.0f,-1.0f},{0.0f,0.0f,1.0f} };
-	Triangle triangle;
-	triangle.vertices[0] = { -1.0f, 0.0f, 0.0f };
-	triangle.vertices[1] = { 1.0f, 0.0f, 0.0f };
-	triangle.vertices[2] = { 0.0f, 1.0f, 0.0f };
 
+	AABB aabb1{ {-0.5f,-0.5f,-0.5f},{0.0f,0.0f,0.0f} };
 
+	AABB aabb2{ {0.2f,0.2f,0.2f},{1.0f,1.0f,1.0f} };
 
 
 
@@ -112,23 +129,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
+		CorrectAABB(aabb1);
+		CorrectAABB(aabb2);
 
-		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
-		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
 
 
 #ifdef _DEBUG
 
 		MouseCamera(&cameraTranslate, &cameraRotate, keys);
 
-		MouseCameraDrawIcon(1280, 720, true);
+		//MouseCameraDrawIcon(1280, 720, true);
 
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 
+		ImGui::DragFloat3("AABB1 max", &aabb1.max.x, 0.01f);
+		ImGui::DragFloat3("AABB1 min", &aabb1.min.x, 0.01f);
 
-		ImGui::DragFloat3("SegmentTranslate", &segment.origin.x, 0.01f);
+		ImGui::DragFloat3("AABB2 max", &aabb2.max.x, 0.01f);
+		ImGui::DragFloat3("AABB2 min", &aabb2.min.x, 0.01f);
 
 
 		ImGui::End();
@@ -143,15 +163,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
-
-		if (IsCollision(triangle, segment)) {
-			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
+		if (IsCollision(aabb1, aabb2)) {
+			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, RED);
 		}
 		else {
-			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
+			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 		}
-
-		DrawTriangle(triangle, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+		DrawAABB(aabb2, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 
 
 
