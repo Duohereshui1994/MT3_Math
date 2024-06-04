@@ -1,11 +1,11 @@
 #pragma once
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <assert.h>
 #include <Vector2.h>
 #include <Vector3.h>
 #include <Matrix4x4.h>
 #include "Novice.h"
+#include <corecrt_math_defines.h>
 
 #pragma region 结构体
 

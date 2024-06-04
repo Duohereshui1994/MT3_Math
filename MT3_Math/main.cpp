@@ -1,10 +1,35 @@
 #define NOMINMAX
 #include <Novice.h>
 #include <imgui.h>
+#include <algorithm>
 #include "3DFunction.h"
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
+/// <summary>
+/// 冲突判定 aabb和球
+/// </summary>
+/// <param name="aabb"></param>
+/// <param name="sphere"></param>
+/// <returns></returns>
+bool IsCollision(const AABB& aabb, const Sphere& sphere)
+{
+	//最近接点
+	Vector3 clossestPoint
+	{
+		std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
+		std::clamp(sphere.center.y,aabb.min.y,aabb.max.y),
+		std::clamp(sphere.center.z,aabb.min.z,aabb.max.z)
+	};
+	//最近接点和球心距离
+	float distance = Length(Subtract(clossestPoint, sphere.center));
+
+	if (distance <= sphere.radius) {
+		return true;
+	}
+
+	return false;
+}
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -25,7 +50,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	AABB aabb1{ {-0.5f,-0.5f,-0.5f},{0.0f,0.0f,0.0f} };
-
+	Sphere sphere{ {0.5f,0.5f,0.5f},0.5f };
 
 
 
@@ -66,6 +91,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("AABB1 max", &aabb1.max.x, 0.01f);
 		ImGui::DragFloat3("AABB1 min", &aabb1.min.x, 0.01f);
 
+		ImGui::DragFloat3("Sphere center", &sphere.center.x, 0.01f);
+		ImGui::DragFloat("Sphere radius", &sphere.radius, 0.01f);
 
 
 
@@ -82,9 +109,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, WHITE);
-	
 
+		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+
+		if (IsCollision(aabb1, sphere)) {
+			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, RED);
+		}
+		else {
+			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+		}
 
 
 
