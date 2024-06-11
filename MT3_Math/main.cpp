@@ -7,33 +7,43 @@
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
 /// <summary>
-/// 结构体OBB
+/// 线性插值函数
 /// </summary>
-typedef struct {
-	Vector3 center;				//中心
-	Vector3 orientations[3];	//坐标轴，正规化 直交必须
-	Vector3 size;				//坐标轴方向长度的一半，中心到面的距离
-}OBB;
-
-/// <summary>
-/// 冲突判定 OBBと球
-/// </summary>
-/// <param name="obb"></param>
-/// <param name="sphere"></param>
+/// <param name="v1"></param>
+/// <param name="v2"></param>
+/// <param name="t"></param>
 /// <returns></returns>
-bool IsCollision(const OBB& obb, const Sphere& sphere) {
-
+Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
+	return Add(Multiply((1.0f - t), v1), Multiply(t, v2));
 }
 
 /// <summary>
-/// 画OBB
+/// 画3次贝塞尔曲线
 /// </summary>
-/// <param name="obb"></param>
+/// <param name="controlPoint0"></param>
+/// <param name="controlPoint1"></param>
+/// <param name="controlPoint2"></param>
 /// <param name="viewProjectionMatrix"></param>
 /// <param name="viewportMatrix"></param>
 /// <param name="color"></param>
-void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, const Vector3& controlPoint2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
+	const int numSegments = 100;
+	Vector3 previousPoint = controlPoint0;
+
+	for (int i = 1; i <= numSegments; ++i) {
+		float t = static_cast<float>(i) / static_cast<float>(numSegments);
+		Vector3 p0p1 = Lerp(controlPoint0, controlPoint1, t);
+		Vector3 p1p2 = Lerp(controlPoint1, controlPoint2, t);
+		Vector3 currentPoint = Lerp(p0p1, p1p2, t);
+
+		Vector3 start = Transform(Transform(previousPoint, viewProjectionMatrix), viewportMatrix);
+		Vector3 end = Transform(Transform(currentPoint, viewProjectionMatrix), viewportMatrix);
+
+		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+
+		previousPoint = currentPoint;
+	}
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -54,9 +64,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
 
+	Vector3 controlPoints[3] = {
+		{ -0.8f,0.58f,1.0f },
+		{ 1.76f,1.0f,-0.3f },
+		{ 0.94f,-0.7f,2.3f }
+	};
 
-
-
+	Sphere pointSphere[3];
 
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -79,7 +93,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-
+		pointSphere[0] = { controlPoints[0],0.01f };
+		pointSphere[1] = { controlPoints[1],0.01f };
+		pointSphere[2] = { controlPoints[2],0.01f };
 
 
 #ifdef _DEBUG
@@ -92,7 +108,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 
-
+		ImGui::DragFloat3("ControlPoint 1", &controlPoints[0].x, 0.01f);
+		ImGui::DragFloat3("ControlPoint 2", &controlPoints[1].x, 0.01f);
+		ImGui::DragFloat3("ControlPoint 3", &controlPoints[2].x, 0.01f);
 
 		ImGui::End();
 
@@ -108,7 +126,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
 
-
+		DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], worldViewProjectionMatrix, viewPortMatrix, BLUE);
+		DrawSphere(pointSphere[0], worldViewProjectionMatrix, viewPortMatrix, RED);
+		DrawSphere(pointSphere[1], worldViewProjectionMatrix, viewPortMatrix, RED);
+		DrawSphere(pointSphere[2], worldViewProjectionMatrix, viewPortMatrix, RED);
 
 
 
