@@ -922,6 +922,31 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 	return false;
 }
 
+/// <summary>
+/// 冲突判定 aabb和球
+/// </summary>
+/// <param name="aabb"></param>
+/// <param name="sphere"></param>
+/// <returns></returns>
+bool IsCollision(const AABB& aabb, const Sphere& sphere)
+{
+	//最近接点
+	Vector3 clossestPoint
+	{
+		std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
+		std::clamp(sphere.center.y,aabb.min.y,aabb.max.y),
+		std::clamp(sphere.center.z,aabb.min.z,aabb.max.z)
+	};
+	//最近接点和球心距离
+	float distance = Length(Subtract(clossestPoint, sphere.center));
+
+	if (distance <= sphere.radius) {
+		return true;
+	}
+
+	return false;
+}
+
 #pragma endregion
 
 #pragma region Camera Controller

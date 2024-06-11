@@ -7,27 +7,33 @@
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
 /// <summary>
-/// 冲突判定 aabb和球
+/// 冲突判定 AABBを线
 /// </summary>
 /// <param name="aabb"></param>
-/// <param name="sphere"></param>
+/// <param name="segment"></param>
 /// <returns></returns>
-bool IsCollision(const AABB& aabb, const Sphere& sphere)
+bool IsCollision(const AABB& aabb, const Segment& segment)
 {
-	//最近接点
-	Vector3 clossestPoint
-	{
-		std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
-		std::clamp(sphere.center.y,aabb.min.y,aabb.max.y),
-		std::clamp(sphere.center.z,aabb.min.z,aabb.max.z)
-	};
-	//最近接点和球心距离
-	float distance = Length(Subtract(clossestPoint, sphere.center));
+	float tNearX = (aabb.min.x - segment.origin.x) / segment.diff.x;
+	float tFarX = (aabb.max.x - segment.origin.x) / segment.diff.x;
+	if (tNearX > tFarX) std::swap(tNearX, tFarX);
 
-	if (distance <= sphere.radius) {
+	float tNearY = (aabb.min.y - segment.origin.y) / segment.diff.y;
+	float tFarY = (aabb.max.y - segment.origin.y) / segment.diff.y;
+	if (tNearY > tFarY) std::swap(tNearY, tFarY);
+
+	float tNearZ = (aabb.min.z - segment.origin.z) / segment.diff.z;
+	float tFarZ = (aabb.max.z - segment.origin.z) / segment.diff.z;
+	if (tNearZ > tFarZ) std::swap(tNearZ, tFarZ);
+
+
+	float tmin = std::max(std::max(tNearX, tNearY), tNearZ);
+	float tmax = std::min(std::min(tFarX, tFarY), tFarZ);
+
+
+	if (tmin <= tmax && tmax >= 0.0f && tmin <= 1.0f) {
 		return true;
 	}
-
 	return false;
 }
 
@@ -49,8 +55,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
 
-	AABB aabb1{ {-0.5f,-0.5f,-0.5f},{0.0f,0.0f,0.0f} };
-	Sphere sphere{ {0.5f,0.5f,0.5f},0.5f };
+	AABB aabb1{ {0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f} };
+	Segment segment{ {-0.7f, 0.3f, 0.0f}, {2.0f, -0.5f, 0.0f} };
+
 
 
 
@@ -76,6 +83,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		CorrectAABB(aabb1);
 
+		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
 
 
 #ifdef _DEBUG
@@ -91,10 +100,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("AABB1 max", &aabb1.max.x, 0.01f);
 		ImGui::DragFloat3("AABB1 min", &aabb1.min.x, 0.01f);
 
-		ImGui::DragFloat3("Sphere center", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("Sphere radius", &sphere.radius, 0.01f);
-
-
+		ImGui::DragFloat3("Segment Origin", &segment.origin.x, 0.01f);
+		ImGui::DragFloat3("Segment Diff", &segment.diff.x, 0.01f);
 
 		ImGui::End();
 
@@ -109,15 +116,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-
-		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, WHITE);
-
-		if (IsCollision(aabb1, sphere)) {
+		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, WHITE);
+		if (IsCollision(aabb1, segment)) {
 			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, RED);
 		}
 		else {
 			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 		}
+
 
 
 
