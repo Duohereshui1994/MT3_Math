@@ -947,6 +947,37 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere)
 	return false;
 }
 
+/// <summary>
+/// 冲突判定 AABBを线
+/// </summary>
+/// <param name="aabb"></param>
+/// <param name="segment"></param>
+/// <returns></returns>
+bool IsCollision(const AABB& aabb, const Segment& segment)
+{
+	float tNearX = (aabb.min.x - segment.origin.x) / segment.diff.x;
+	float tFarX = (aabb.max.x - segment.origin.x) / segment.diff.x;
+	if (tNearX > tFarX) std::swap(tNearX, tFarX);
+
+	float tNearY = (aabb.min.y - segment.origin.y) / segment.diff.y;
+	float tFarY = (aabb.max.y - segment.origin.y) / segment.diff.y;
+	if (tNearY > tFarY) std::swap(tNearY, tFarY);
+
+	float tNearZ = (aabb.min.z - segment.origin.z) / segment.diff.z;
+	float tFarZ = (aabb.max.z - segment.origin.z) / segment.diff.z;
+	if (tNearZ > tFarZ) std::swap(tNearZ, tFarZ);
+
+
+	float tmin = std::max(std::max(tNearX, tNearY), tNearZ);
+	float tmax = std::min(std::min(tFarX, tFarY), tFarZ);
+
+
+	if (tmin <= tmax && tmax >= 0.0f && tmin <= 1.0f) {
+		return true;
+	}
+	return false;
+}
+
 #pragma endregion
 
 #pragma region Camera Controller

@@ -7,34 +7,33 @@
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
 /// <summary>
-/// 冲突判定 AABBを线
+/// 结构体OBB
 /// </summary>
-/// <param name="aabb"></param>
-/// <param name="segment"></param>
+typedef struct {
+	Vector3 center;				//中心
+	Vector3 orientations[3];	//坐标轴，正规化 直交必须
+	Vector3 size;				//坐标轴方向长度的一半，中心到面的距离
+}OBB;
+
+/// <summary>
+/// 冲突判定 OBBと球
+/// </summary>
+/// <param name="obb"></param>
+/// <param name="sphere"></param>
 /// <returns></returns>
-bool IsCollision(const AABB& aabb, const Segment& segment)
-{
-	float tNearX = (aabb.min.x - segment.origin.x) / segment.diff.x;
-	float tFarX = (aabb.max.x - segment.origin.x) / segment.diff.x;
-	if (tNearX > tFarX) std::swap(tNearX, tFarX);
+bool IsCollision(const OBB& obb, const Sphere& sphere) {
 
-	float tNearY = (aabb.min.y - segment.origin.y) / segment.diff.y;
-	float tFarY = (aabb.max.y - segment.origin.y) / segment.diff.y;
-	if (tNearY > tFarY) std::swap(tNearY, tFarY);
+}
 
-	float tNearZ = (aabb.min.z - segment.origin.z) / segment.diff.z;
-	float tFarZ = (aabb.max.z - segment.origin.z) / segment.diff.z;
-	if (tNearZ > tFarZ) std::swap(tNearZ, tFarZ);
+/// <summary>
+/// 画OBB
+/// </summary>
+/// <param name="obb"></param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewportMatrix"></param>
+/// <param name="color"></param>
+void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
-
-	float tmin = std::max(std::max(tNearX, tNearY), tNearZ);
-	float tmax = std::min(std::min(tFarX, tFarY), tFarZ);
-
-
-	if (tmin <= tmax && tmax >= 0.0f && tmin <= 1.0f) {
-		return true;
-	}
-	return false;
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -55,8 +54,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
 
-	AABB aabb1{ {0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f} };
-	Segment segment{ {-0.7f, 0.3f, 0.0f}, {2.0f, -0.5f, 0.0f} };
+
 
 
 
@@ -81,10 +79,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		CorrectAABB(aabb1);
 
-		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewPortMatrix);
-		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewPortMatrix);
 
 
 #ifdef _DEBUG
@@ -97,11 +92,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 
-		ImGui::DragFloat3("AABB1 max", &aabb1.max.x, 0.01f);
-		ImGui::DragFloat3("AABB1 min", &aabb1.min.x, 0.01f);
 
-		ImGui::DragFloat3("Segment Origin", &segment.origin.x, 0.01f);
-		ImGui::DragFloat3("Segment Diff", &segment.diff.x, 0.01f);
 
 		ImGui::End();
 
@@ -116,13 +107,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, WHITE);
-		if (IsCollision(aabb1, segment)) {
-			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, RED);
-		}
-		else {
-			DrawAABB(aabb1, worldViewProjectionMatrix, viewPortMatrix, WHITE);
-		}
+
 
 
 
