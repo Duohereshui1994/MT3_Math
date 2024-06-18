@@ -64,6 +64,30 @@ typedef struct {
 	Vector3 max;
 }AABB;
 
+/// <summary>
+/// 弹簧
+/// </summary>
+typedef struct
+{
+	Vector3 anchor;				//固定端的位置
+	float naturalLength;		//自然长度
+	float stiffness;			//刚性系数
+	float dampingCoefficirent;	//衰减系数
+}Spring;
+
+/// <summary>
+/// 球
+/// </summary>
+typedef struct
+{
+	Vector3 position;		//位置
+	Vector3 velocity;		//速度
+	Vector3 acceleration;	//加速度
+	float mass;				//质量
+	float radius;			//半径
+	unsigned int color;		//颜色
+}Ball;
+
 #pragma endregion
 
 #pragma region 数学公式
