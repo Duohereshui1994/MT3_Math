@@ -503,6 +503,26 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 
 #pragma endregion
 
+#pragma region 运算符重载
+
+// 向量二项运算符重载
+inline Vector3 operator+(const Vector3& v1, const Vector3& v2) { return Add(v1, v2); }
+inline Vector3 operator-(const Vector3& v1, const Vector3& v2) { return Subtract(v1, v2); }
+inline Vector3 operator*(float Scaler, const Vector3& v) { return Multiply(Scaler, v); }
+inline Vector3 operator*(const Vector3& v, float Scaler) { return Scaler * v; }
+inline Vector3 operator/(const Vector3& v, float Scaler) { return (1.0f / Scaler) * v; }
+
+// 向量单项运算符重载
+inline Vector3 operator+(const Vector3& v) { return v; }
+inline Vector3 operator-(const Vector3& v) { return Vector3(-v.x, -v.y, -v.z); }
+
+// 矩阵二项运算符重载
+Matrix4x4 operator+(const Matrix4x4& m1, const Matrix4x4& m2) { return Add(m1, m2); }
+Matrix4x4 operator-(const Matrix4x4& m1, const Matrix4x4& m2) { return Subtract(m1, m2); }
+Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2) { return Multiply(m1, m2); }
+
+#pragma endregion
+
 #pragma region 矩阵表示
 
 /// <summary>
