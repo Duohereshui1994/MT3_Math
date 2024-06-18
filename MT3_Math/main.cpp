@@ -6,14 +6,13 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-// 圆锥振子
-typedef struct {
-	Vector3 anchor;             // 固定点
-	float length;               // 绳长
-	float halfApexAngle;        // 圆锥顶角的一半
-	float angle;                // 角度
-	float angularVelocity;      // 角速度
-}ConicalPendulum;
+Vector3 Reflect(const Vector3& input, const Vector3& normal)
+{
+	float dotProduct = Dot(input, normal);
+	Vector3 reflection = input - (2 * dotProduct) * normal;
+	return reflection;
+}
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -36,20 +35,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	float deltaTime = 1.0f / 60.0f;
 
-	ConicalPendulum conicalPendulum{
-		.anchor = { 0.0f, 1.0f, 0.0f },
-		.length = 0.8f,
-		.halfApexAngle = 0.7f,
-		.angle = 0.0f,
-		.angularVelocity = 0.0f,
+	float bounceCoefficient = 0.8f;//反弹系数
+
+	Plane plane{
+		.normal = Normalize({ -0.2f,0.9f,-0.3f }),
+		.distance = 0.0f,
 	};
 
+
 	Ball ball{
-		.position = { 1.2f, 0.0f, 0.0f },
+		.position = { 0.8f,1.2f,0.3f },
+		.acceleration = { 0.0f,-9.8f,0.0f },
 		.mass = 2.0f,
 		.radius = 0.05f,
 		.color = WHITE,
 	};
+
+
 
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -73,23 +75,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
+		Sphere sphere{
+			.center = ball.position,
+			.radius = ball.radius,
+		};
+
 		if (isStart)
 		{
-			// 角速度計算
-			conicalPendulum.angularVelocity = std::sqrt((9.8f * std::cos(conicalPendulum.halfApexAngle)) / (conicalPendulum.length * std::sin(conicalPendulum.halfApexAngle) * std::sin(conicalPendulum.halfApexAngle)));
-			conicalPendulum.angle += conicalPendulum.angularVelocity * deltaTime;
+			ball.velocity += ball.acceleration * deltaTime;
+			ball.position += ball.velocity * deltaTime;
+
+			if (IsCollision(sphere, plane)) {
+				Vector3 reflected = Reflect(ball.velocity, plane.normal);
+				Vector3 projectToNormal = Project(reflected, plane.normal);
+				Vector3 movingDirection = reflected - projectToNormal;
+				ball.velocity = projectToNormal * bounceCoefficient + movingDirection;
+			}
 		}
 
-		// 圆周运动位置計算
-		float radius = std::sin(conicalPendulum.halfApexAngle) * conicalPendulum.length;
-		float height = std::cos(conicalPendulum.halfApexAngle) * conicalPendulum.length;
-		ball.position.x = conicalPendulum.anchor.x + std::cos(conicalPendulum.angle) * radius;
-		ball.position.y = conicalPendulum.anchor.y - height;
-		ball.position.z = conicalPendulum.anchor.z - std::sin(conicalPendulum.angle) * radius;
 
 
-		Vector3 anchorScreenPos = Transform(Transform(conicalPendulum.anchor, worldViewProjectionMatrix), viewPortMatrix);
-		Vector3 ballScreenPos = Transform(Transform(ball.position, worldViewProjectionMatrix), viewPortMatrix);
 
 #ifdef _DEBUG
 
@@ -110,7 +115,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Button("Reset");
 		if (ImGui::IsItemClicked()) {
 			isStart = false;
-			conicalPendulum.angle = 0.0f;
+			ball.position = { 0.8f, 1.2f, 0.3f };
+			ball.velocity = { 0.0f, 0.0f, 0.0f };
 		}
 
 		ImGui::End();
@@ -126,9 +132,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		DrawSphere(Sphere{ ball.position, ball.radius }, worldViewProjectionMatrix, viewPortMatrix, ball.color);
+		DrawPlane(plane, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 
-		Novice::DrawLine((int)anchorScreenPos.x, (int)anchorScreenPos.y, (int)ballScreenPos.x, (int)ballScreenPos.y, WHITE);
+		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, ball.color);
+
 
 
 		///

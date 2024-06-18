@@ -99,6 +99,17 @@ typedef struct {
 	float angularAcceleration;  // 角加速度
 }Pendulum;
 
+/// <summary>
+/// 圆锥振子
+/// </summary>
+typedef struct {
+	Vector3 anchor;             // 固定点
+	float length;               // 绳长
+	float halfApexAngle;        // 圆锥顶角的一半
+	float angle;                // 角度
+	float angularVelocity;      // 角速度
+}ConicalPendulum;
+
 
 #pragma endregion
 
