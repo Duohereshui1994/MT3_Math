@@ -61,6 +61,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 
 	float deltaTime = 1.0f / 60.0f;
+	bool isStart = false;
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -83,19 +84,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		Vector3 diff = ball.position - spring.anchor;
-		float length = Length(diff);
-		if (length != 0.0f) {
-			Vector3 direction = Normalize(diff);
-			Vector3 restPostion = spring.anchor + direction * spring.naturalLength;
-			Vector3 displacement = length * (ball.position - restPostion);
-			Vector3 restoringForce = -spring.stiffness * displacement;
-			Vector3 dampingForce = -spring.dampingCoefficirent * ball.velocity;
-			Vector3 force = restoringForce + dampingForce;
-			ball.acceleration = force / ball.mass;
+		if (isStart) {
+			Vector3 diff = ball.position - spring.anchor;
+			float length = Length(diff);
+			if (length != 0.0f) {
+				Vector3 direction = Normalize(diff);
+				Vector3 restPostion = spring.anchor + direction * spring.naturalLength;
+				Vector3 displacement = length * (ball.position - restPostion);
+				Vector3 restoringForce = -spring.stiffness * displacement;
+				Vector3 dampingForce = -spring.dampingCoefficirent * ball.velocity;
+				Vector3 force = restoringForce + dampingForce;
+				ball.acceleration = force / ball.mass;
+			}
+			ball.velocity += ball.acceleration * deltaTime;
+			ball.position += ball.velocity * deltaTime;
 		}
-		ball.velocity += ball.acceleration * deltaTime;
-		ball.position += ball.velocity * deltaTime;
 
 
 		Vector3 anchorScreenPos = Transform(Transform(spring.anchor, worldViewProjectionMatrix), viewPortMatrix);
@@ -108,9 +111,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//MouseCameraDrawIcon(1280, 720, true);
 
 		ImGui::Begin("Window");
-
-		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
-		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
+		
+		ImGui::Button("Start");
+		if (ImGui::IsItemClicked()) {
+			isStart = true;
+		}
 
 
 
