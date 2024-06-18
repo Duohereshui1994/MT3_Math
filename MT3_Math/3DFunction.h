@@ -68,8 +68,6 @@ typedef struct {
 
 #pragma region 数学公式
 
-
-
 /// <summary>
 /// 加算
 /// </summary>
@@ -496,6 +494,13 @@ Vector3 Cross(const Vector3& v1, const Vector3& v2) {
 	return result;
 }
 
+/// <summary>
+/// 线性插值函数
+/// </summary>
+Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
+	return Add(Multiply((1.0f - t), v1), Multiply(t, v2));
+}
+
 #pragma endregion
 
 #pragma region 矩阵表示
@@ -566,15 +571,9 @@ Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
 #pragma region 画各种
 
-
-
 /// <summary>
 /// 画球
 /// </summary>
-/// <param name="sphere">球的参数结构体</param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
-/// <param name="color">颜色</param>
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
@@ -622,8 +621,6 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 /// <summary>
 /// 画网格
 /// </summary>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) {
 	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
 	const uint32_t kSubdivision = 10;//分割数
@@ -705,10 +702,6 @@ Vector3 Perpendicular(const Vector3& vector) {
 /// <summary>
 /// 画平面
 /// </summary>
-/// <param name="plane">平面参数</param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
-/// <param name="color"></param>
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	Vector3 center = Multiply(plane.distance, plane.normal);
 	Vector3 perpendicular[4];
@@ -734,10 +727,6 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 /// <summary>
 /// 画三角形
 /// </summary>
-/// <param name="triangle"></param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewPortMatrix"></param>
-/// <param name="color"></param>
 void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
 	Vector3 screenVertices[3];
 	for (uint32_t i = 0; i < 3; ++i) {
@@ -750,10 +739,6 @@ void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatri
 /// <summary>
 /// 画AABB
 /// </summary>
-/// <param name="aabb"></param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewPortMatrix"></param>
-/// <param name="color"></param>
 void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewPortMatrix, uint32_t color) {
 	Vector3 points[8];
 	points[0] = Vector3(aabb.min.x, aabb.min.y, aabb.min.z);
@@ -786,6 +771,29 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 	Novice::DrawLine((int)screenPoints[1].x, (int)screenPoints[1].y, (int)screenPoints[5].x, (int)screenPoints[5].y, color);
 	Novice::DrawLine((int)screenPoints[2].x, (int)screenPoints[2].y, (int)screenPoints[6].x, (int)screenPoints[6].y, color);
 	Novice::DrawLine((int)screenPoints[3].x, (int)screenPoints[3].y, (int)screenPoints[7].x, (int)screenPoints[7].y, color);
+}
+
+/// <summary>
+/// 画3次贝塞尔曲线
+/// </summary>
+void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, const Vector3& controlPoint2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	const int numSegments = 100;
+	Vector3 previousPoint = controlPoint0;
+
+	for (int i = 1; i <= numSegments; ++i) {
+		float t = static_cast<float>(i) / static_cast<float>(numSegments);
+		Vector3 p0p1 = Lerp(controlPoint0, controlPoint1, t);
+		Vector3 p1p2 = Lerp(controlPoint1, controlPoint2, t);
+		Vector3 currentPoint = Lerp(p0p1, p1p2, t);
+
+		Vector3 start = Transform(Transform(previousPoint, viewProjectionMatrix), viewportMatrix);
+		Vector3 end = Transform(Transform(currentPoint, viewProjectionMatrix), viewportMatrix);
+
+		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+
+		previousPoint = currentPoint;
+	}
 }
 
 #pragma endregion

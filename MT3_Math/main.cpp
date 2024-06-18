@@ -6,45 +6,9 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-/// <summary>
-/// 线性插值函数
-/// </summary>
-/// <param name="v1"></param>
-/// <param name="v2"></param>
-/// <param name="t"></param>
-/// <returns></returns>
-Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
-	return Add(Multiply((1.0f - t), v1), Multiply(t, v2));
-}
 
-/// <summary>
-/// 画3次贝塞尔曲线
-/// </summary>
-/// <param name="controlPoint0"></param>
-/// <param name="controlPoint1"></param>
-/// <param name="controlPoint2"></param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
-/// <param name="color"></param>
-void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, const Vector3& controlPoint2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
-	const int numSegments = 100;
-	Vector3 previousPoint = controlPoint0;
 
-	for (int i = 1; i <= numSegments; ++i) {
-		float t = static_cast<float>(i) / static_cast<float>(numSegments);
-		Vector3 p0p1 = Lerp(controlPoint0, controlPoint1, t);
-		Vector3 p1p2 = Lerp(controlPoint1, controlPoint2, t);
-		Vector3 currentPoint = Lerp(p0p1, p1p2, t);
-
-		Vector3 start = Transform(Transform(previousPoint, viewProjectionMatrix), viewportMatrix);
-		Vector3 end = Transform(Transform(currentPoint, viewProjectionMatrix), viewportMatrix);
-
-		Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
-
-		previousPoint = currentPoint;
-	}
-}
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -63,14 +27,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
-
-	Vector3 controlPoints[3] = {
-		{ -0.8f,0.58f,1.0f },
-		{ 1.76f,1.0f,-0.3f },
-		{ 0.94f,-0.7f,2.3f }
-	};
-
-	Sphere pointSphere[3];
+	//0:肩 1：肘 2：手
+	Vector3 translates[3] = { { 0.2f,1.0f,0.0f }, { 0.4f,0.0f,0.0f }, { 0.3f,0.0f,0.0f } };
+	Vector3 rotates[3] = { { 0.0f,0.0f,-6.8f }, { 0.0f,0.0f,-1.4f }, { 0.0f,0.0f,0.0f } };
+	Vector3 scales[3] = { { 1.0f,1.0f,1.0f }, { 1.0f,1.0f,1.0f }, { 1.0f,1.0f,1.0f } };
 
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -86,6 +46,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓更新処理ここから
 		///
 
+		//视角矩阵渲染方法
 		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, rotate, translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -93,9 +54,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		pointSphere[0] = { controlPoints[0],0.01f };
-		pointSphere[1] = { controlPoints[1],0.01f };
-		pointSphere[2] = { controlPoints[2],0.01f };
+		//肩 肘 手 坐标计算
+
+		Matrix4x4 shoulderMatrix = MakeAffineMatrix(scales[0], rotates[0], translates[0]); //肩的英文 ls
+		Matrix4x4 elbowMatrix = MakeAffineMatrix(scales[1], rotates[1], translates[1]);//手肘的英文 le
+		Matrix4x4 handMatrix = MakeAffineMatrix(scales[2], rotates[2], translates[2]);//手的英文 lh
+
+		Matrix4x4 shoulderWorldMatrix = shoulderMatrix;//Ws
+		Matrix4x4 elbowWorldMatrix = Multiply(elbowMatrix, shoulderMatrix);//肩-肘系统的坐标 We
+		Matrix4x4 handWorldMatrix = Multiply(Multiply(handMatrix, elbowMatrix), shoulderMatrix);//肘-手系统的坐标 Wh
+
+		Vector3 shoulderPos = { shoulderWorldMatrix.m[3][0], shoulderWorldMatrix.m[3][1], shoulderWorldMatrix.m[3][2] };
+		Vector3 elbowPos = { elbowWorldMatrix.m[3][0], elbowWorldMatrix.m[3][1], elbowWorldMatrix.m[3][2] };
+		Vector3 handPos = { handWorldMatrix.m[3][0], handWorldMatrix.m[3][1], handWorldMatrix.m[3][2] };
+
+		Vector3 shoulderScreenPos = Transform(Transform(shoulderPos, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 elbowScreenPos = Transform(Transform(elbowPos, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 handScreenPos = Transform(Transform(handPos, worldViewProjectionMatrix), viewPortMatrix);
+
 
 
 #ifdef _DEBUG
@@ -105,12 +81,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//MouseCameraDrawIcon(1280, 720, true);
 
 		ImGui::Begin("Window");
+
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 
-		ImGui::DragFloat3("ControlPoint 1", &controlPoints[0].x, 0.01f);
-		ImGui::DragFloat3("ControlPoint 2", &controlPoints[1].x, 0.01f);
-		ImGui::DragFloat3("ControlPoint 3", &controlPoints[2].x, 0.01f);
+		ImGui::DragFloat3("ShoulderPos", &translates[0].x, 0.01f);
+		ImGui::DragFloat3("ShoulderRotate", &rotates[0].x, 0.01f);
+
+		ImGui::DragFloat3("ElbowPos", &translates[1].x, 0.01f);
+		ImGui::DragFloat3("ElbowRotate", &rotates[1].x, 0.01f);
+
+		ImGui::DragFloat3("HandPos", &translates[2].x, 0.01f);
+		ImGui::DragFloat3("HandRotate", &rotates[2].x, 0.01f);
 
 		ImGui::End();
 
@@ -125,11 +107,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
+		Novice::DrawLine((int)shoulderScreenPos.x, (int)shoulderScreenPos.y, (int)elbowScreenPos.x, (int)elbowScreenPos.y, WHITE);
+		Novice::DrawLine((int)elbowScreenPos.x, (int)elbowScreenPos.y, (int)handScreenPos.x, (int)handScreenPos.y, WHITE);
 
-		DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], worldViewProjectionMatrix, viewPortMatrix, BLUE);
-		DrawSphere(pointSphere[0], worldViewProjectionMatrix, viewPortMatrix, RED);
-		DrawSphere(pointSphere[1], worldViewProjectionMatrix, viewPortMatrix, RED);
-		DrawSphere(pointSphere[2], worldViewProjectionMatrix, viewPortMatrix, RED);
+		DrawSphere(Sphere{ shoulderPos, 0.1f }, worldViewProjectionMatrix, viewPortMatrix, RED);
+		DrawSphere(Sphere{ elbowPos, 0.1f }, worldViewProjectionMatrix, viewPortMatrix, GREEN);
+		DrawSphere(Sphere{ handPos, 0.1f }, worldViewProjectionMatrix, viewPortMatrix, BLUE);
 
 
 
