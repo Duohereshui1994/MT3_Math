@@ -27,8 +27,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
-	
+	bool isStart = false;
 
+	float angularVelocity = (float)M_PI;
+
+	float angle = 0.0f;
+
+	float deltaTime = 1.0f / 60.0f;
+
+	float moveRadius = 0.8f;
+
+	//球
+	Vector3 center{ 0.0f,0.0f,0.0f };
+	Sphere sphere{ { center.x + std::cos(angle) * moveRadius, center.y + std::sinf(angle) * moveRadius, center.z },{0.1f} };
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -51,7 +62,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		
+
+		if (isStart)
+			angle += angularVelocity * deltaTime;
+
+
+		sphere = { { center.x + std::cos(angle) * moveRadius, center.y + std::sinf(angle) * moveRadius, center.z },{0.1f} };
 
 #ifdef _DEBUG
 
@@ -64,7 +80,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 
+		ImGui::Button("Start");
+		if (ImGui::IsItemClicked()) {
+			isStart = true;
+		}
 
+		ImGui::Button("Reset");
+		if (ImGui::IsItemClicked()) {
+			isStart = false;
+			angle = 0.0f;
+		}
 
 		ImGui::End();
 
@@ -79,7 +104,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		
+		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, WHITE);
 
 
 
