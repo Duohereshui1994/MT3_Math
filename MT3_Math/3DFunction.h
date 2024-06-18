@@ -88,6 +88,18 @@ typedef struct
 	unsigned int color;		//颜色
 }Ball;
 
+/// <summary>
+/// 单摆（振子）
+/// </summary>
+typedef struct {
+	Vector3 anchor;             // 固定端
+	float length;               // 绳长
+	float angle;                // 角度
+	float angularVelocity;      // 角速度
+	float angularAcceleration;  // 角加速度
+}Pendulum;
+
+
 #pragma endregion
 
 #pragma region 数学公式
