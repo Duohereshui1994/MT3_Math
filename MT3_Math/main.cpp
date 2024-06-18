@@ -6,8 +6,14 @@
 
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
-
-
+// 单摆（振子）
+typedef struct {
+	Vector3 anchor;             // 固定端
+	float length;               // 绳长
+	float angle;                // 角度
+	float angularVelocity;      // 角速度
+	float angularAcceleration;  // 角加速度
+}Pendulum;
 
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -29,17 +35,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	bool isStart = false;
 
-	float angularVelocity = (float)M_PI;
-
-	float angle = 0.0f;
-
 	float deltaTime = 1.0f / 60.0f;
 
-	float moveRadius = 0.8f;
+	Pendulum pendulum{
+		.anchor = { 0.0f, 1.0f, 0.0f },
+		.length = 0.8f,
+		.angle = 0.7f,
+		.angularVelocity = 0.0f,
+		.angularAcceleration = 0.0f
+	};
 
-	//球
-	Vector3 center{ 0.0f,0.0f,0.0f };
-	Sphere sphere{ { center.x + std::cos(angle) * moveRadius, center.y + std::sinf(angle) * moveRadius, center.z },{0.1f} };
+	//下摆的球
+	Sphere sphere{ { pendulum.anchor.x + std::sin(pendulum.angle) * pendulum.length, pendulum.anchor.y - std::cos(pendulum.angle) * pendulum.length, pendulum.anchor.z }, 0.08f };
+
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -64,10 +72,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		if (isStart)
-			angle += angularVelocity * deltaTime;
+		{
+			pendulum.angularAcceleration = -(9.8f / pendulum.length) * std::sin(pendulum.angle);
+			pendulum.angularVelocity += pendulum.angularAcceleration * deltaTime;
+			pendulum.angle += pendulum.angularVelocity * deltaTime;
+		}
 
+		// 振子位置
+		sphere.center = { pendulum.anchor.x + std::sin(pendulum.angle) * pendulum.length, pendulum.anchor.y - std::cos(pendulum.angle) * pendulum.length, pendulum.anchor.z };
+		
+		
+		Vector3 anchorScreenPos = Transform(Transform(pendulum.anchor, worldViewProjectionMatrix), viewPortMatrix);
+		Vector3 sphereScreenPos = Transform(Transform(sphere.center, worldViewProjectionMatrix), viewPortMatrix);
 
-		sphere = { { center.x + std::cos(angle) * moveRadius, center.y + std::sinf(angle) * moveRadius, center.z },{0.1f} };
 
 #ifdef _DEBUG
 
@@ -88,7 +105,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Button("Reset");
 		if (ImGui::IsItemClicked()) {
 			isStart = false;
-			angle = 0.0f;
+			pendulum.angle = 0.7f;
 		}
 
 		ImGui::End();
@@ -104,8 +121,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
 
-		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix, WHITE);
+		DrawSphere(sphere, worldViewProjectionMatrix, viewPortMatrix,WHITE);
 
+		Novice::DrawLine((int)anchorScreenPos.x, (int)anchorScreenPos.y, (int)sphereScreenPos.x, (int)sphereScreenPos.y, WHITE);
 
 
 		///
