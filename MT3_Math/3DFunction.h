@@ -110,6 +110,14 @@ typedef struct {
 	float angularVelocity;      // 角速度
 }ConicalPendulum;
 
+/// <summary>
+/// 胶囊体
+/// </summary>
+typedef struct {
+	Segment segment;
+	float radius;
+}Capsule;
+
 
 #pragma endregion
 
@@ -191,7 +199,7 @@ Vector3 Normalize(const Vector3& v) {
 }
 
 /// <summary>
-/// 加算
+/// 行列加算
 /// </summary>
 Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result = {};
@@ -204,7 +212,7 @@ Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
 }
 
 /// <summary>
-/// 減算
+/// 行列減算
 /// </summary>
 Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result = {};
@@ -217,7 +225,7 @@ Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
 }
 
 /// <summary>
-/// 乗算
+/// 行列乗算
 /// </summary>
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result = {};
@@ -1190,4 +1198,3 @@ void MouseCameraDrawIcon(float windowWidth, float windowHeight, bool showHelpTex
 	}
 }
 #pragma endregion
-
