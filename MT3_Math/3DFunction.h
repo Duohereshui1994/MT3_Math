@@ -897,13 +897,27 @@ bool IsCollision(const Triangle& triangle, const Segment& segment) {
 /// <param name="aabb"></param>
 void CorrectAABB(AABB& aabb) {
 	aabb.max.x = std::max(aabb.max.x, aabb.min.x);
-	aabb.min.x = std::min(aabb.min.x, aabb.max.x);
+	aabb.min.x = std::min(aabb.max.x, aabb.min.x);
 
 	aabb.max.y = std::max(aabb.max.y, aabb.min.y);
-	aabb.min.y = std::min(aabb.min.y, aabb.max.y);
+	aabb.min.y = std::min(aabb.max.y, aabb.min.y);
 
 	aabb.max.z = std::max(aabb.max.z, aabb.min.z);
-	aabb.min.z = std::min(aabb.min.z, aabb.max.z);
+	aabb.min.z = std::min(aabb.max.y, aabb.min.y);
+}
+
+void CorrectAABB2(AABB& aabb) {
+	if (aabb.max.x < aabb.min.x) {
+		std::swap(aabb.max.x, aabb.min.x);
+	}
+
+	if (aabb.max.y < aabb.min.y) {
+		std::swap(aabb.max.y, aabb.min.y);
+	}
+
+	if (aabb.max.z < aabb.min.z) {
+		std::swap(aabb.max.z, aabb.min.z);
+	}
 }
 
 /// <summary>
