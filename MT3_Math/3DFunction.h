@@ -598,9 +598,9 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
 	Matrix4x4 viewPortMatrix = viewportMatrix;
 
-	const uint32_t kSubdivision = 10;	//分割数
+	const uint32_t kSubdivision = 10;										//分割数
 	const float kLonEvery = 2.0f * float(M_PI) / float(kSubdivision);		//経度一つ分の角度
-	const float kLatEvery = float(M_PI) / float(kSubdivision);		//緯度一つ分の角度
+	const float kLatEvery = float(M_PI) / float(kSubdivision);				//緯度一つ分の角度
 
 	Vector3 a;
 	Vector3 b;
@@ -610,7 +610,7 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 		float lat = -float(M_PI) / 2.0f + kLatEvery * float(latIndex);		//現在の緯度
 		//経度の方向に分割
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
-			float lon = kLonEvery * float(lonIndex);		//現在の経度
+			float lon = kLonEvery * float(lonIndex);						//現在の経度
 			//球面上の座標を求める
 			a.x = sphere.center.x + sphere.radius * cos(lat) * cos(lon);
 			a.y = sphere.center.y + sphere.radius * sin(lat);
@@ -624,13 +624,18 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			c.y = sphere.center.y + sphere.radius * sin(lat);
 			c.z = sphere.center.z + sphere.radius * cos(lat) * sin(lon + kLonEvery);
 			//画面上の座標を求める
+			// 
+			//正規化デバイス座標
 			Vector3 ndcA = Transform(a, worldViewProjectionMatrix);
 			Vector3 ndcB = Transform(b, worldViewProjectionMatrix);
 			Vector3 ndcC = Transform(c, worldViewProjectionMatrix);
+
+			//スクリーン座標	ビューポート変換
 			Vector3 screenA = Transform(ndcA, viewPortMatrix);
 			Vector3 screenB = Transform(ndcB, viewPortMatrix);
 			Vector3 screenC = Transform(ndcC, viewPortMatrix);
 
+			//描画
 			Novice::DrawLine((int)screenA.x, (int)screenA.y, (int)screenB.x, (int)screenB.y, color);
 			Novice::DrawLine((int)screenA.x, (int)screenA.y, (int)screenC.x, (int)screenC.y, color);
 		}
@@ -642,73 +647,31 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 /// 画网格
 /// </summary>
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, Matrix4x4& viewportMatrix) {
-	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
-	const uint32_t kSubdivision = 10;//分割数
-	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);//一つ分の長さ
+	const float kGridHalfWidth = 2.0f;										//Gridの半分の幅
+	const uint32_t kSubdivision = 10;										//分割数
+	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);	//一つ分の長さ
 
-	Matrix4x4 worldViewProjectionMatrix = viewProjectionMatrix;
-	Matrix4x4 viewPortMatrix = viewportMatrix;
-
-	Vector3 startPosHorizontal[kSubdivision + 1];
-	Vector3 endPosHorizontal[kSubdivision + 1];
-	Vector3 startPosScreenHorizontal[kSubdivision + 1];
-	Vector3 endPosScreenHorizontal[kSubdivision + 1];
-
-	Vector3 startPosVertical[kSubdivision + 1];
-	Vector3 endPosVertical[kSubdivision + 1];
-	Vector3 startPosScreenVertical[kSubdivision + 1];
-	Vector3 endPosScreenVertical[kSubdivision + 1];
-	//从深处到面前按顺序画线
+	//左から右まで　縦線描画
 	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
-		//使用上面的信息，求出在world坐标里的起点和终点坐标
-		startPosHorizontal[xIndex].x = kGridHalfWidth;
-		endPosHorizontal[xIndex].x = -kGridHalfWidth;
+		float x = -kGridHalfWidth + (xIndex * kGridEvery);
+		Vector3 start{ x,0.0f,-kGridHalfWidth };
+		Vector3 end{ x,0.0f,kGridHalfWidth };
 
-		startPosHorizontal[xIndex].y = 0.0f;
-		endPosHorizontal[xIndex].y = 0.0f;
+		Vector3 startScreen = Transform(Transform(start, viewProjectionMatrix), viewportMatrix);
+		Vector3 endScreen = Transform(Transform(end, viewProjectionMatrix), viewportMatrix);
 
-		startPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
-		endPosHorizontal[xIndex].z = kGridHalfWidth - xIndex * kGridEvery;
-		//变换成screen坐标
-		Vector3 ndcStartPosHorizontal = Transform(startPosHorizontal[xIndex], worldViewProjectionMatrix);
-		Vector3 ndcEndPosHorizontal = Transform(endPosHorizontal[xIndex], worldViewProjectionMatrix);
-
-		startPosScreenHorizontal[xIndex] = Transform(ndcStartPosHorizontal, viewPortMatrix);
-		endPosScreenHorizontal[xIndex] = Transform(ndcEndPosHorizontal, viewPortMatrix);
-		////使用变换后的坐标画线
-
-		if (xIndex == 5) {
-			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, BLACK);
-		}
-		else {
-			Novice::DrawLine((int)startPosScreenHorizontal[xIndex].x, (int)startPosScreenHorizontal[xIndex].y, (int)endPosScreenHorizontal[xIndex].x, (int)endPosScreenHorizontal[xIndex].y, 0xAAAAAAFF);
-		}
-
+		Novice::DrawLine((int)startScreen.x, (int)startScreen.y, (int)endScreen.x, (int)endScreen.y, x == 0.0f ? BLACK : 0xAAAAAAFF);
 	}
-	//从左到右
+	//手前から奥まで　横線描画
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
-		startPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
-		endPosVertical[zIndex].x = kGridHalfWidth - zIndex * kGridEvery;
+		float z = -kGridHalfWidth + (zIndex * kGridEvery);
+		Vector3 start{ -kGridHalfWidth,0.0f,z };
+		Vector3 end{ kGridHalfWidth,0.0f,z };
 
-		startPosVertical[zIndex].y = 0.0f;
-		endPosVertical[zIndex].y = 0.0f;
+		Vector3 startScreen = Transform(Transform(start, viewProjectionMatrix), viewportMatrix);
+		Vector3 endScreen = Transform(Transform(end, viewProjectionMatrix), viewportMatrix);
 
-		startPosVertical[zIndex].z = kGridHalfWidth;
-		endPosVertical[zIndex].z = -kGridHalfWidth;
-
-		Vector3 ndcStartPosVertical = Transform(startPosVertical[zIndex], worldViewProjectionMatrix);
-		Vector3 ndcEndPosVertical = Transform(endPosVertical[zIndex], worldViewProjectionMatrix);
-
-		startPosScreenVertical[zIndex] = Transform(ndcStartPosVertical, viewPortMatrix);
-		endPosScreenVertical[zIndex] = Transform(ndcEndPosVertical, viewPortMatrix);
-
-		if (zIndex == 5) {
-			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, BLACK);
-		}
-		else {
-			Novice::DrawLine((int)startPosScreenVertical[zIndex].x, (int)startPosScreenVertical[zIndex].y, (int)endPosScreenVertical[zIndex].x, (int)endPosScreenVertical[zIndex].y, 0xAAAAAAFF);
-		}
-
+		Novice::DrawLine((int)startScreen.x, (int)startScreen.y, (int)endScreen.x, (int)endScreen.y, z == 0.0f ? BLACK : 0xAAAAAAFF);
 	}
 }
 

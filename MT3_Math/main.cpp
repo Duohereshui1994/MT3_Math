@@ -7,15 +7,17 @@
 const char kWindowTitle[] = "GC2A_04_ゴ_ウ";
 
 //弹簧
+//バネの構造体
 typedef struct
 {
-	Vector3 anchor;				//固定端的位置
-	float naturalLength;		//自然长度
-	float stiffness;			//刚性系数
-	float dampingCoefficirent;	//衰减系数
+	Vector3 anchor;				//固定端的位置	アンカー。固定された端の位置
+	float naturalLength;		//自然长度	自然長さ
+	float stiffness;			//刚性系数	剛性、バネ定数ｋ
+	float dampingCoefficirent;	//衰减系数	減衰係数
 }Spring;
 
 //球
+//ボールの構造体
 typedef struct
 {
 	Vector3 position;		//位置
@@ -40,11 +42,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
+	//回転
 	Vector3 rotate{};
+	//移動
 	Vector3 translate{};
+	//カメラの回転
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
+	//カメラの移動
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 
+	//構造体初期化
 	Spring spring{
 		.anchor = { 0.0f, 0.0f, 0.0 },
 		.naturalLength = 1.0f ,
@@ -52,7 +59,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		.dampingCoefficirent = 2.0f,
 	};
 
-
+	//構造体初期化
 	Ball ball{
 		.position = { 1.2f, 0.0f, 0.0f },
 		.mass = 2.0f,
@@ -60,7 +67,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		.color = BLUE,
 	};
 
+	//時間間隔
 	float deltaTime = 1.0f / 60.0f;
+
+	//フレーム開始フラグ
 	bool isStart = false;
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -75,15 +85,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
-
-		//视角矩阵渲染方法
-		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, rotate, translate);
-		Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
-		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
-		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-
+		
+		//フラグ
 		if (isStart) {
 			Vector3 diff = ball.position - spring.anchor;
 			float length = Length(diff);
@@ -100,25 +103,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ball.position += ball.velocity * deltaTime;
 		}
 
-
+		//视角矩阵渲染方法	レンダリング
+		//各種行列の計算
+		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, rotate, translate);
+		Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
+		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		// 透視投影行列を作成
+		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
+		//ビュー座標変換行列を作成
+		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		//ViewportMatrixビューポート変換行列を作成
+		Matrix4x4 viewPortMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
+		//スクリーン座標変換
 		Vector3 anchorScreenPos = Transform(Transform(spring.anchor, worldViewProjectionMatrix), viewPortMatrix);
 		Vector3 ballScreenPos = Transform(Transform(ball.position, worldViewProjectionMatrix), viewPortMatrix);
 
 #ifdef _DEBUG
-
+		//デバッグ用カメラ
 		MouseCamera(&cameraTranslate, &cameraRotate, keys);
 
-		//MouseCameraDrawIcon(1280, 720, true);
-
+		//ImGuiの制御
 		ImGui::Begin("Window");
-		
 		ImGui::Button("Start");
 		if (ImGui::IsItemClicked()) {
 			isStart = true;
 		}
-
-
-
 		ImGui::End();
 
 #endif 
@@ -130,10 +139,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 
+		// Gridを描画
 		DrawGrid(worldViewProjectionMatrix, viewPortMatrix);
-
+		// Ballを描画
 		DrawSphere(Sphere{ .center = ball.position,.radius = ball.radius }, worldViewProjectionMatrix, viewPortMatrix, ball.color);
-
+		// バネのアンカーとボールの位置を結ぶ線を描画
 		Novice::DrawLine((int)anchorScreenPos.x, (int)anchorScreenPos.y, (int)ballScreenPos.x, (int)ballScreenPos.y, WHITE);
 
 
