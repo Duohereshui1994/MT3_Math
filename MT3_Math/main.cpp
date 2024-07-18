@@ -13,7 +13,7 @@ typedef struct
 	Vector3 anchor;				//固定端的位置	アンカー。固定された端の位置
 	float naturalLength;		//自然长度	自然長さ
 	float stiffness;			//刚性系数	剛性、バネ定数ｋ
-	float dampingCoefficirent;	//衰减系数	減衰係数
+	float dampingCoefficirent;	//衰减系数	減衰係数c
 }Spring;
 
 //球
@@ -62,6 +62,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//構造体初期化
 	Ball ball{
 		.position = { 1.2f, 0.0f, 0.0f },
+		.velocity = {0.0f,0.0f,0.0f},
+		.acceleration = {0.0f,0.0f,0.0f},
 		.mass = 2.0f,
 		.radius = 0.05f,
 		.color = BLUE,
@@ -88,18 +90,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 		//フラグ
 		if (isStart) {
+			//アンカーの端末からボールの位置への方向ベクトル
 			Vector3 diff = ball.position - spring.anchor;
+			//長さを計算する
 			float length = Length(diff);
+			//
 			if (length != 0.0f) {
+				//正規化方向ベクトル
 				Vector3 direction = Normalize(diff);
+				//静止する位置を計算する
 				Vector3 restPostion = spring.anchor + direction * spring.naturalLength;
+				//位置移動量ベクトル
 				Vector3 displacement = length * (ball.position - restPostion);
+				//回復力　バネの力  F = kx
 				Vector3 restoringForce = -spring.stiffness * displacement;
+				//減衰力　減衰抵抗　F = -cv
 				Vector3 dampingForce = -spring.dampingCoefficirent * ball.velocity;
+				//合力
 				Vector3 force = restoringForce + dampingForce;
+				//加速度　F = ma => a = F / m
 				ball.acceleration = force / ball.mass;
 			}
+			//速度
 			ball.velocity += ball.acceleration * deltaTime;
+			//位置
 			ball.position += ball.velocity * deltaTime;
 		}
 
@@ -127,6 +141,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Button("Start");
 		if (ImGui::IsItemClicked()) {
 			isStart = true;
+		}
+		if (ImGui::Button("Reset")) {
+			// バネの動きを停止
+			isStart = false;
+			//ボールの初期化
+			ball.position = { 1.2f, 0.0f, 0.0f };
+			ball.velocity = { 0.0f, 0.0f, 0.0f };
+			ball.acceleration = { 0.0f, 0.0f, 0.0f };
 		}
 		ImGui::End();
 

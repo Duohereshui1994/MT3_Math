@@ -504,15 +504,15 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 #pragma endregion
 
 #pragma region 运算符重载
-
-// 向量二项运算符重载
+// 演算子オーバーロード
+// 向量二项运算符重载  a = b + c;
 inline Vector3 operator+(const Vector3& v1, const Vector3& v2) { return Add(v1, v2); }
 inline Vector3 operator-(const Vector3& v1, const Vector3& v2) { return Subtract(v1, v2); }
 inline Vector3 operator*(float Scaler, const Vector3& v) { return Multiply(Scaler, v); }
 inline Vector3 operator*(const Vector3& v, float Scaler) { return Scaler * v; }
 inline Vector3 operator/(const Vector3& v, float Scaler) { return (1.0f / Scaler) * v; }
 
-// 向量单项运算符重载
+// 向量单项运算符重载 a = -b;
 inline Vector3 operator+(const Vector3& v) { return v; }
 inline Vector3 operator-(const Vector3& v) { return Vector3(-v.x, -v.y, -v.z); }
 
@@ -978,7 +978,7 @@ Vector2 preMousePos{}; // 前１フレームの位置
 void MouseCamera(Vector3* cameraPos, Vector3* cameraRotate, char key[]) {
 	float moveSpeed = 0.1f;     // キーボードで移動のスピード
 	float wheelSpeed = 0.3f;    // マウスのホイールスクロールのスピード
-	float rotationSpeed = 0.4f; // マウスの右キーで回るスピード
+	float rotationSpeed = 0.4f; // マウスの右キーで回転スピード
 	float dragSpeed = 0.5f;     // マウスの中キーで移動のスピード
 
 	Vector3 front{}, right{}, up{}, move{}; // カメラの前・横・上の向きと総合の移動ベクトル
@@ -1053,57 +1053,6 @@ void MouseCamera(Vector3* cameraPos, Vector3* cameraRotate, char key[]) {
 	cameraPos->x += move.x;
 	cameraPos->y += move.y;
 	cameraPos->z += move.z;
-}
-// マウスでカメラを制御する時アイコンを表す
-void MouseCameraDrawIcon(float windowWidth, float windowHeight, bool showHelpText) {
-	windowWidth;
-	if (showHelpText) {
-		// Text
-		float textLine = 17;
-		Vector2 textPos{ 0 + 5, windowHeight - textLine * 5 - 5 };
-		Novice::ScreenPrintf(int(textPos.x), int(textPos.y), "----- Mouse Camera Usage -----");
-		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 1), "(The control logic is the same as Unity)");
-		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 2), "Right mouse: camera rotation");
-		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 3), "Middle mouse: camera movement and zoom in/out");
-		Novice::ScreenPrintf(int(textPos.x), int(textPos.y + textLine * 4), "Right mouse + WASD: camera move");
-	}
-	// Icon
-	int mouseX, mouseY;
-	Novice::GetMousePosition(&mouseX, &mouseY);
-	Vector2 currentMousePos{ float(mouseX), float(mouseY) };
-	Vector2 eyeSize{ 9, 5 }, boxSize{ 3, 3 }, boxPos{ 9, 7 }; // マウスの右キーのアイコン
-	Vector2 headSize{ 6, 7 }, fingerSize{ 3, 9 };           // マウスの中キーのアイコン
-	if (Novice::IsPressMouse(1)) {
-		// Eye
-		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.x), int(eyeSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.x + 1), int(eyeSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawEllipse((int)currentMousePos.x, (int)currentMousePos.y, int(eyeSize.y - 1), int(eyeSize.y - 1), 0, BLACK, kFillModeWireFrame);
-		// MoveBox
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x - boxSize.x - 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x - boxSize.x - 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x + boxSize.x + 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x), int(boxSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + boxPos.x + boxSize.x + 1), int(currentMousePos.y + boxPos.y + boxSize.y + 1), int(boxSize.x + 1), int(boxSize.y + 1), 0, BLACK, kFillModeWireFrame);
-	}
-	else if (Novice::IsPressMouse(2)) {
-		// Finger
-		Novice::DrawBox(int(currentMousePos.x - 5), int(currentMousePos.y - 13), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x - 5), int(currentMousePos.y - 13), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x - 8), int(currentMousePos.y - 7), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x - 8), int(currentMousePos.y - 7), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x - 1), int(currentMousePos.y - 14), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x - 1), int(currentMousePos.y - 14), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x + 6), int(currentMousePos.y - 10), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + 6), int(currentMousePos.y - 10), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		Novice::DrawBox(int(currentMousePos.x + 3), int(currentMousePos.y - 12), int(fingerSize.x), int(fingerSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawBox(int(currentMousePos.x + 3), int(currentMousePos.y - 12), int(fingerSize.x + 1), int(fingerSize.y + 1), 0, BLACK, kFillModeWireFrame);
-		// Head
-		Novice::DrawEllipse((int)currentMousePos.x + 2, (int)currentMousePos.y + 1, int(headSize.x), int(headSize.y), 0, WHITE, kFillModeSolid);
-		Novice::DrawEllipse((int)currentMousePos.x + 2, (int)currentMousePos.y + 1, int(headSize.x + 1), int(headSize.y + 1), 0, BLACK, kFillModeWireFrame);
-	}
 }
 #pragma endregion
 
